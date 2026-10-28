@@ -133,7 +133,7 @@ runs/                       raw responses, state files, run records, reports
 | Report numbers match the raw results | recomputation, `experiments/score.py` |
 | The rule's verdict and skill count on 3 real postings match **my own hand prediction** | `tests/test_hand_check.py` against `hand-check/predictions.json`. **[Smit: fill in by hand, run, record the result here]** |
 
-**How:** by hand (me): the 20 hand labels (three confirmed explicitly on 10-28) and the live day-2 run. **[Smit: run the tests yourself, then write the date and result here.]** Every test was written by Claude against
+**How:** by hand (me): the 20 hand labels (three confirmed explicitly on 10-28) and the live day-2 run. I ran the full suite myself on 2026-10-28 (`python3 -m unittest discover -s tests -v`): 29 tests, `OK (skipped=2)`. The 2 skipped are the hand-check tests, which wait for my predictions. Every test was written by Claude against
 CONTRACT.md, right **after** Claude wrote the code, in the same session. So none of them
 is an independent test I wrote before reading Claude's code. The numbers in
 the reports were checked by recomputation (`score.py`). Two claims in Claude's report
