@@ -3,8 +3,8 @@
 ## Executive summary
 
 This is an honest log of what went wrong, what was tried, and what is still unresolved
-while building Job-Search Agent 1. Everything in the first section happened on
-2026-10-24 and traces to a commit, a file, or a test. **The section "In my own words" is
+while building Job-Search Agent 1. F1–F11 happened on 2026-10-24. F12–F25 were added on
+2026-10-28. Each one traces to a commit, a file, or a test. **The section "In my own words" is
 for me (Smit) to write.** A drafted log of events is not the same as my account of them.
 
 ## Log of events (drafted by Claude from the session; each item is traceable)
