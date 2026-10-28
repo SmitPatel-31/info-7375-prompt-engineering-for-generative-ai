@@ -1,6 +1,6 @@
 # CONTRACT — Job-Search Agent 1
 
-Version 0.2 · 2026-10-27 · Tushar Patel
+Version 0.3 · 2026-10-27 · Tushar Patel
 
 Scope: one Greenhouse board, one fictional persona résumé, new postings only, every verdict justified.
 
@@ -23,6 +23,10 @@ Scope: one Greenhouse board, one fictional persona résumé, new postings only, 
   - no API key → stop (O)
   - model fallback off (P)
   - a raw file without content can't be a run input (A)
+- **v0.3 (2026-10-27):** three gaps found while Claude Code built against v0.2. The code already does this; the contract is updated to match, and the change is documented here rather than written as if known in advance.
+  - R2 has no résumé field, so its justification entry uses `resume_field: "none"` (R2 only).
+  - Claude also receives the run date and the posting id.
+  - The no-content stop applies to live fetches too (after the raw file is saved).
 
 ## In
 
@@ -70,6 +74,7 @@ For each **new** posting, one record:
 
 **What Claude receives:**
 - the persona's rule fields only;
+- the posting id and the run date;
 - the posting's title, location, dates, and HTML-stripped content;
 - R1–R6 and the verdict logic, in plain language.
 
@@ -82,7 +87,8 @@ Per run: run date, whether the run is live or **seeded**, postings fetched, numb
   - An existing empty list `[]` means every posting is new.
   - Ids are only ever added, never removed. The file is written only after the outputs are written.
 - **Raw files:** each live fetch saves the exact response bytes, before parsing, to `raw/greenhouse-stripe-<fetch timestamp>.json`, even if the status is not 200. Raw files are tracked in git.
-- **Seeded runs:** `--from-raw <file>` reads a saved response with no network call and labels the run seeded. It saves no new raw file, but it does update the state file it was given. If the file has no posting content, it stops with an error.
+- **Seeded runs:** `--from-raw <file>` reads a saved response with no network call and labels the run seeded. It saves no new raw file, but it does update the state file it was given.
+- **No content:** if any posting in a raw response (live or seeded) has no content, the run stops with an error. For a live fetch, the raw file is saved first.
 
 ## Refuses
 
@@ -143,7 +149,7 @@ Each check returns **pass**, **fail**, or **unknown**.
 ## Wrong versions (tests must catch these)
 
 1. **A justification that cites no fields.** This applies to both judges.
-   - A rule justification entry missing any of its four parts is rejected.
+   - A rule justification entry missing any of its four parts is rejected. The one exception: R2's `resume_field` is "none", because R2 compares the posting date with the run date.
    - A Claude justification entry with a missing, empty, or unlisted `resume_field` or `posting_field` is rejected.
 2. **An already-seen posting reported as new again.** Test:
    1. Seed the state with a subset of a fixture's ids.
