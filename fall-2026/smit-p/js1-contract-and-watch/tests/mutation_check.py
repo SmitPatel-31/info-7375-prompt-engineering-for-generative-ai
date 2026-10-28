@@ -49,6 +49,14 @@ MUTANTS = [
 ]
 
 
+COPY = ("src", "tests", "persona", "hand-check", "runs")
+
+
+def copy_tree(tmp):
+    for d in COPY:
+        shutil.copytree(os.path.join(ROOT, d), os.path.join(tmp, d), ignore=shutil.ignore_patterns("__pycache__"))
+
+
 def run_suite(root):
     p = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests"],
                        cwd=root, capture_output=True, text=True)
@@ -60,11 +68,16 @@ def main():
     ok, last = run_suite(ROOT)
     if not ok:
         sys.exit(f"the unmutated suite fails ({last}); fix that first")
+    # Sanity check: an UNMUTATED copy must pass, or every mutant would look "caught".
+    # (A first version of this script forgot to copy hand-check/ and reported a false 13/13.)
+    with tempfile.TemporaryDirectory() as tmp:
+        copy_tree(tmp)
+        ok, last = run_suite(tmp)
+        if not ok:
+            sys.exit(f"an unmutated copy fails ({last}); the copy is missing something")
     for mid, what, fname, old, new in MUTANTS:
         with tempfile.TemporaryDirectory() as tmp:
-            for d in ("src", "tests", "persona"):
-                shutil.copytree(os.path.join(ROOT, d), os.path.join(tmp, d),
-                                ignore=shutil.ignore_patterns("__pycache__"))
+            copy_tree(tmp)
             path = os.path.join(tmp, "src", fname)
             with open(path, encoding="utf-8") as f:
                 text = f.read()
