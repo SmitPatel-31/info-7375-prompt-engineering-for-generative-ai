@@ -1,9 +1,11 @@
 # Sampling report (Chapter 1)
 
+> **Authorship.** Drafted by Claude Code from runs it carried out on 2026-10-24 in Smit P.'s session. The hand labels and the decisions are Smit's (see DECISIONS.md). Every number can be recomputed with `python3 experiments/score.py`.
+
 ## Executive summary
 
-I asked Claude the same question about the same five real job postings four times each,
-each time in a brand-new conversation, and compared the answers with each other and with
+Claude Code (in my build session) asked Claude the same question about the same five real job postings four
+times each, each time in a brand-new conversation, and compared the answers with each other and with
 my own hand label. Claude was almost perfectly consistent: every accepted answer for a
 given posting matched the others, and one of the 20 replies was thrown out for breaking
 the required format. But consistency is not correctness. On one posting, a Software

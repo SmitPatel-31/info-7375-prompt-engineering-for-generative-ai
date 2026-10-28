@@ -1,0 +1,26 @@
+{
+ "_how": "Fill in by HAND, before running tests/test_hand_check.py. Read hand-check/<id>.txt and apply the rule in CONTRACT.md: (1) title contains a role keyword (Software Engineer)? (2) title contains senior/sr/staff/principal/manager? (3) which distinct r\u00e9sum\u00e9 skills (skills.* lists except familiar_with_not_shipped) appear as whole words? Write the skills you found, and your verdict. Do not look at the code's output first.",
+ "source": "runs/raw-20261024T192545-live.json",
+ "by": "",
+ "date": "",
+ "predictions": {
+  "8274152": {
+   "title_check": "",
+   "seniority_word": "",
+   "skills_found": [],
+   "verdict": ""
+  },
+  "8154749": {
+   "title_check": "",
+   "seniority_word": "",
+   "skills_found": [],
+   "verdict": ""
+  },
+  "8165656": {
+   "title_check": "",
+   "seniority_word": "",
+   "skills_found": [],
+   "verdict": ""
+  }
+ }
+}

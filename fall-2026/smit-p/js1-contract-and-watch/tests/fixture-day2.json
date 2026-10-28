@@ -1,4 +1,5 @@
 {
+ "_CONSTRUCTED": "Test fixture. These postings (ids 101-107) are INVENTED by Claude on 2026-10-24 to exercise the rule and the diff; they are not real Airbnb postings and are never reported as results.",
  "jobs": [
   {
    "id": 101,

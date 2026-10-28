@@ -31,5 +31,6 @@
   8165656,
   8154749,
   8154705
- ]
+ ],
+ "_method_erratum": "2026-10-28: the _method text says '10 from each stratum (or all non-senior if fewer)'. What the code actually did: all 6 non-senior postings + 14 senior ones (20 - 6), split 3+7 into development and 3+7 into held-out. The id lists below are what was used."
 }

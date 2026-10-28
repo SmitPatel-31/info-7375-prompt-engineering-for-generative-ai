@@ -145,6 +145,8 @@ def validate_verdict(verdict, posting, resume):
         raise JustificationError(f"verdict must be relevant|not_relevant, got {verdict.get('verdict')!r}")
     if verdict.get("posting_id") != posting.get("id"):
         raise JustificationError(f"verdict is for posting {verdict.get('posting_id')}, checked against {posting.get('id')}")
+    if "posting_title" in verdict and verdict["posting_title"] != posting.get("title", ""):
+        raise JustificationError(f"posting {posting.get('id')}: verdict was made for «{verdict['posting_title']}», not «{posting.get('title', '')}»")
     cites = verdict.get("citations") or []
     if not cites:
         raise JustificationError(f"posting {posting.get('id')}: justification cites nothing")
@@ -159,7 +161,7 @@ def validate_verdict(verdict, posting, resume):
         if pf:
             if pf not in fields:
                 raise JustificationError(f"posting {posting.get('id')}: unknown posting field {pf!r}")
-            if not pt or pt.lower() not in fields[pf].lower():
+            if not pt or find_whole(pt, fields[pf]) is None:
                 raise JustificationError(f"posting {posting.get('id')}: cited text {pt!r} not found in {pf}")
             has_posting = True
     if not (has_resume and has_posting):

@@ -1,6 +1,6 @@
 # Job-Search Agent 1 — The Contract and the Watch
 
-**Smit Patel · INFO 7375 · Fall 2026 · Chapters 1–3**
+**Smit P. · INFO 7375 · Fall 2026 · Chapters 1–3**
 
 ## Executive summary
 
@@ -28,7 +28,8 @@ handed.
 | Claude judge | Claude Code CLI (`claude`, tested 2.1.305), signed in. Only needed for `--claude` and `experiments/` |
 | Board | Greenhouse `airbnb`; allow-list = `boards-api.greenhouse.io` only |
 | Persona | Aarav Patel (fictional, `@example.com`, `555` phone), `persona/aarav-patel.resume.json` |
-| Judge model | `claude-sonnet-5-5` (CLI alias `sonnet`) |
+| Judge model | `claude-sonnet-5-5` (CLI alias `sonnet`). All 60 experiment calls and the 10 seeded-run calls recorded only this model. In the 10-28 run record, 7 of 17 calls name `claude-haiku-5-5`. The CLI can use a small model internally, and the code then saved only the first model listed, so those 7 records cannot show which model wrote the verdict. The code now saves every model listed (`models_used`) |
+| Terms of use | one GET per run to Greenhouse's public Job Board API, identified by a `User-Agent`; no login, no applying, no messages |
 
 ## Commands (run from this folder, on a fresh clone)
 
@@ -40,7 +41,7 @@ python3 -m unittest discover -s tests -v
 python3 src/watch.py --board airbnb --resume persona/aarav-patel.resume.json --state runs/state.json --out runs/ --label live --claude
 ```
 
-The first command runs the 24 contract tests, offline. The second is the watch. On a
+The first command runs the 27 contract tests offline, plus 2 hand-check tests that skip until `hand-check/predictions.json` is filled in. `python3 tests/mutation_check.py` breaks the code 13 ways and records which bugs the tests notice (`tests/mutation-log.md`). The second is the watch. On a
 fresh state file it is a baseline and reports nothing. Run it again on another day and
 it reports only the postings that appeared in between.
 
@@ -81,6 +82,21 @@ Other evidence: `SAMPLING-REPORT.md`, `PROMPT-EXPERIMENT.md`, `ACTION-SURFACES.m
 `experiments/` (prompts, labels, raw replies, scores), `DECISIONS.md`, `SOURCES.md`,
 `FRICTIONAL.md`.
 
+## How to explain any verdict
+
+Open the run's report, for example `runs/report-20261028T153510-live.md`. Each posting
+lists the rule's citations as «résumé field» ↔ «posting text» and the first check that
+failed. To redo one by hand: (1) does the title contain «Software Engineer»? (2) does
+the title contain senior / sr / staff / principal / manager? (3) count the distinct
+skills from the résumé's `skills` lists (not `familiar_with_not_shipped`) that appear as
+whole words in the posting. Relevant only if (1) yes, (2) no, and (3) ≥ 2.
+
+## Submission
+
+- GitHub folder: `https://github.com/nikbearbrown/info-7375-prompt-engineering-for-generative-ai/tree/main/fall-2026/smit-p/js1-contract-and-watch`
+  (submitted through a pull request from my fork; the link works once it is merged)
+- Final commit: given in Canvas. A commit cannot contain its own hash.
+
 ## Layout
 
 ```
@@ -88,7 +104,9 @@ CONTRACT.md                 written first (commit c29d163), before any code
 src/rule.py                 the written rule + justification validator (a record)
 src/claude_judge.py         Claude under a prompt contract + strict reply validator (a judgment)
 src/watch.py                allow-listed fetch, raw saved, diff by id, reports
-tests/test_contract.py      24 tests incl. both wrong versions; fixtures day1/day2
+tests/test_contract.py      27 tests incl. both wrong versions; fixtures day1/day2 (CONSTRUCTED postings)
+tests/mutation_check.py     deliberate-bug check → tests/mutation-log.md
+tests/test_hand_check.py    my hand predictions (hand-check/) vs the rule
 prompts/                    baseline.md, revision.md (one change)
 experiments/                selection, labeling rule, hand labels, run_claude.py, score.py, results/
 runs/                       raw responses, state files, run records, reports
@@ -105,16 +123,17 @@ runs/                       raw responses, state files, run records, reports
 |---|---|
 | Rule verdicts match hand-worked answers on 7 fixture postings | `TheRule.test_hand_worked_verdicts` |
 | Whole-word matching (Java≠JavaScript, SQL≠PostgreSQL, Go≠Google) | `TheRule.test_whole_word_matching` |
-| Wrong version 1 (labels on wrong postings) is caught | `WrongVersion1_*` (3 tests) |
-| Wrong version 2 (justification cites nothing / invents a citation) is caught | `WrongVersion2_*` (3 tests) |
+| Wrong version 1 (labels on wrong postings) is caught: every shifted label, a same-title twin, and end to end through `watch.py` with the board order reversed | `WrongVersion1_*` (4 tests) |
+| Wrong version 2 (justification cites nothing / invents a citation / cites part of a word) is caught | `WrongVersion2_*` (4 tests) |
 | Baseline reports nothing; run 2 reports exactly the added ids; no-change run reports nothing | `TheWatch.*` |
 | Failed fetch leaves state untouched; raw saved byte-for-byte | `TheWatch.test_failed_fetch_leaves_state_alone`, `test_raw_response_saved_untouched` |
 | Off-list hosts, http, bad slugs, and non-persona résumés refused | `Refuses.*` |
-| Claude replies outside the fixed format rejected (10 cases) | `ClaudeReplyValidator.test_rejects_everything_else` |
-| The tests notice deliberate bugs | mutation check: 6 of 7 caught after one added test. The 7th removes a guard that a second check already covers (FRICTIONAL F2) |
+| Claude replies outside the fixed format rejected (11 cases); a failed CLI call is recorded, not crashed | `ClaudeReplyValidator.*` |
+| The tests notice deliberate bugs | `tests/mutation_check.py` → `tests/mutation-log.md`: 12 of 13 caught. The survivor (M1) removes a guard that a second check already covers |
 | Report numbers match the raw results | recomputation, `experiments/score.py` |
+| The rule's verdict and skill count on 3 real postings match **my own hand prediction** | `tests/test_hand_check.py` against `hand-check/predictions.json`. **[Smit: fill in by hand, run, record the result here]** |
 
-**How:** the 20 hand labels were by hand (me). Every test was written by Claude against
+**How:** by hand (me): the 20 hand labels (three confirmed explicitly on 10-28) and the live day-2 run. **[Smit: run the tests yourself, then write the date and result here.]** Every test was written by Claude against
 CONTRACT.md, right **after** Claude wrote the code, in the same session. So none of them
 is an independent test I wrote before reading Claude's code. The numbers in
 the reports were checked by recomputation (`score.py`). Two claims in Claude's report
@@ -147,8 +166,8 @@ better.
 | Part of the task | Claude should | I should | Why it stays mine | Evidence the split happened |
 |---|---|---|---|---|
 | The contract | offer options, write them up, implement against them | choose board, persona, rule, wrong versions, failure | it defines what "right" means; whoever writes it decides what gets checked | DECISIONS D1–D6; `CONTRACT.md` alone in commit `c29d163` |
-| Hand labels | present the facts of each posting | label every posting | the labels are the answer key; if Claude labels, the experiment grades Claude against itself | DECISIONS D8–D11; `56ca4e8` |
+| Hand labels | present the facts of each posting; never fill in a label | label every posting | the labels are the answer key; if Claude labels, the experiment grades Claude against itself | DECISIONS D8–D12; `56ca4e8`. Where Claude did infer three labels, that was caught in review and I re-labeled them (D12) |
 | The labeling rule | point out when my labels contradict my rule | decide whether the rule or the labels change | only I know which one I meant | D9–D10: my typed answer contradicted v1, and I chose to amend (LABELING-RULE.md) |
-| Code, tests, runs | write and run all of it | read the reports, check the numbers | — | SOURCES.md |
+| Code, tests, runs | write and run all of it; break its own code to test the tests | run the tests myself, run the live day-2 watch, check the numbers | I am the one who has to explain any verdict to a TA; code I have never run is not verified by me | SOURCES.md; DECISIONS D14 (I ran day 2); `tests/mutation-log.md` |
 | Is a job worth a day? | flag, cite, sort | decide | that is my time and my visa clock | every report ends at "you decide" |
 | Signing | draft | sign or withhold | my name goes on it | the blank line above |

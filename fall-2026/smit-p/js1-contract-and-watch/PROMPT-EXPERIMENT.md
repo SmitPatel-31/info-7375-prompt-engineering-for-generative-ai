@@ -1,5 +1,7 @@
 # Prompt experiment (Chapter 2)
 
+> **Authorship.** Drafted by Claude Code from runs it carried out on 2026-10-24 in Smit P.'s session. The hand labels and the decisions are Smit's (see DECISIONS.md). Every number can be recomputed with `python3 experiments/score.py`.
+
 ## Executive summary
 
 I hand-labeled 20 real Airbnb engineering postings, then tested two versions of the
@@ -21,7 +23,7 @@ experiment does show is a real bug in my output format.
 | Label balance | development: 0 relevant / 10 not. Held-out: **1 relevant** / 9 not |
 | Baseline | `prompts/baseline.md`: the CONTRACT.md rule (title, seniority, ≥2 skills) plus the fixed JSON output format |
 | Revision | `prompts/revision.md`: **one change**, a 4th condition: "The posting location is in the United States or is remote within the United States." (plus "three" → "four") |
-| Why that change | it was chosen after reading the development baseline results. The only development miss was 8154749, a Software Engineer role in São Paulo |
+| Why that change | **chosen by Claude, not by me**, about 13 seconds after the development baseline finished (`asked_at` in the result files). The Brazil miss (8154749, Software Engineer, São Paulo) had already shown up 4/4 in the sampling run, which uses 5 of the development postings. The development baseline confirmed it as the only development miss |
 | Pass | the reply is ACCEPTED by the validator AND its verdict equals my label. A rejected reply fails |
 | Model / calls | `claude-sonnet-5-5`, one fresh conversation per posting per prompt, 40 calls |
 | Order | dev-baseline → (choose revision) → dev-revision → held-out baseline → held-out revision. Held-out results were not looked at until both prompts were fixed |
@@ -76,6 +78,15 @@ held-out, missing exactly the same two Brazil postings as the baseline prompt.
   output had been seen at that point, but it is still a weakness.
 - **The revision was chosen from one development miss.** That is overfitting-shaped even
   though it held up on held-out.
+- **The held-out set was not completely unseen.** No Claude *judgment* was run on it
+  until both prompts were fixed. But when the 20 postings were drawn, Claude printed
+  every held-out title, location, and rule verdict, before choosing the revision. So
+  Claude had seen that the held-out set also has postings in Brazil and India. I cannot
+  rule out that this influenced the choice of a location condition.
+- The prompt contract adds the location condition, but the **written rule in
+  CONTRACT.md does not**. The record and the judgment now follow different rules. That
+  is deliberate (the contract was written first and is not edited after the fact), and
+  it is the next thing to fix in layer 2.
 - One run per prompt per posting. The sampling report shows the verdict is stable but the
   format fails about 5% of the time, so a single rejection could be noise.
 - Neither prompt checks years of experience, which my labels use. No posting in this

@@ -59,7 +59,7 @@ def call_claude(system_prompt, message, model=DEFAULT_MODEL, timeout=180):
         raise RuntimeError(f"claude exited {proc.returncode}: {proc.stderr.strip()[:300]}")
     envelope = json.loads(proc.stdout)
     meta = {"session_id": envelope.get("session_id"),
-            "model": next(iter(envelope.get("modelUsage", {}) or {}), model),
+            "models_used": sorted(envelope.get("modelUsage", {}) or {}),  # the CLI may also use a small model internally
             "cost_usd": envelope.get("total_cost_usd")}
     return envelope.get("result", ""), meta
 
@@ -81,8 +81,8 @@ def validate_reply(text, posting, resume):
     if not isinstance(rf, list) or not rf:
         raise ReplyRejected("resume_fields must be a non-empty list")
     for path in rf:
-        if not isinstance(path, str) or resume_value(resume, path) is None:
-            raise ReplyRejected(f"résumé field {path!r} does not exist")
+        if not isinstance(path, str) or not isinstance(resume_value(resume, path), str):
+            raise ReplyRejected(f"résumé field {path!r} does not exist or is not a single value")
     ev = obj["posting_evidence"]
     if not isinstance(ev, list) or not ev:
         raise ReplyRejected("posting_evidence must be a non-empty list")
@@ -98,10 +98,15 @@ def validate_reply(text, posting, resume):
 
 
 def judge(posting, resume, prompt_name="baseline", model=DEFAULT_MODEL):
-    """Returns a record of one Claude judgment — accepted or REJECTED, never repaired."""
-    reply, meta = call_claude(load_prompt(prompt_name), user_message(posting, resume), model)
+    """Returns a record of one Claude judgment — ACCEPTED, REJECTED, or CALL_FAILED; never repaired."""
     rec = {"posting_id": posting["id"], "source": "claude", "label": "JUDGMENT (model)",
-           "prompt": prompt_name, "raw_reply": reply, **meta}
+           "prompt": prompt_name, "model_requested": model}
+    try:
+        reply, meta = call_claude(load_prompt(prompt_name), user_message(posting, resume), model)
+    except (RuntimeError, OSError, ValueError, subprocess.TimeoutExpired) as e:
+        rec.update(status="CALL_FAILED", verdict=None, reject_reason=f"claude call failed: {e}"[:300])
+        return rec
+    rec.update(raw_reply=reply, **meta)
     try:
         obj = validate_reply(reply, posting, resume)
         rec.update(status="ACCEPTED", verdict=obj["verdict"], resume_fields=obj["resume_fields"],

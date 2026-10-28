@@ -2,11 +2,11 @@
 
 ## Executive summary
 
-This file records, word for word, the decisions Smit Patel made in the 2026-10-24 Claude
+This file records, word for word, the decisions Smit P. made in the 2026-10-24 Claude
 Code build session. It also records where Claude only offered options or wrote things
 up. It is the evidence behind the "driver's seat" table in the README. Every decision
 below was made through a multiple-choice prompt in the session (Claude offered options,
-Smit picked one or typed his own). The answers are quoted as given.
+Smit picked one or typed an answer). The answers are quoted as given.
 
 | # | Decision | Smit's answer (verbatim) | Where it landed |
 |---|---|---|---|
@@ -18,9 +18,12 @@ Smit picked one or typed his own). The answers are quoted as given.
 | D6 | Failure sentence | "Missed new posting" | CONTRACT.md "What a failure looks like" |
 | D7 | Labeling rule v1 | "IC + early-career + US (Recommended)" | `experiments/LABELING-RULE.md` (commit `783402f`) |
 | D8 | Development labels | "None of these 3" ×3, "8257909 Not relevant" | `experiments/labels.json` |
-| D9 | Held-out labels 4–6 | typed: "Software Engineer or Cloud Engineer or Full Stack Engineer under 3 to 4 yeara" | read as: none of 8263303 / 7747259 / 8053132 relevant, **and** as a narrower rule |
+| D9 | Held-out labels 4–6 | typed: "Software Engineer or Cloud Engineer or Full Stack Engineer under 3 to 4 yeara" | **Claude inferred** from this that none of 8263303 / 7747259 / 8053132 is relevant, and read it as a narrower rule. Smit confirmed the three labels explicitly in D12 |
 | D10 | Rule conflict | "Amend rule, log it (Rec.)" | LABELING-RULE.md amendment v2 (commit `56ca4e8`) |
 | D11 | 8274152 | "Relevant" (the first pass returned no answer) | `experiments/labels.json` |
+| D12 | 2026-10-28: re-label explicitly the three held-out postings that D9 only implied (8263303, 7747259, 8053132) | "None of these 3" | `experiments/labels.json` `_provenance_correction`; the labels are unchanged |
+| D13 | 2026-10-28: don't push yet | "Don't push yet; I'll do the day-2 run and sign-off first." | nothing pushed |
+| D14 | 2026-10-28: the live day-2 run | Smit ran `python3 src/watch.py … --label live --claude` personally | `runs/*20261028T153510*` |
 
 ## What Claude decided without asking (and should be checked)
 

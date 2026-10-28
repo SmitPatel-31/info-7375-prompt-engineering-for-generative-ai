@@ -185,7 +185,7 @@ def run(args):
         r = e["rule"]
         line = f"  {r['posting_id']}  rule={r['verdict']:<12}"
         if "claude" in e:
-            line += f" claude[judgment]={e['claude']['verdict'] or 'REJECTED'}"
+            line += f" claude[judgment]={e['claude']['verdict'] or e['claude']['status']}"
         print(line + f"  {r['posting_title']}")
     return 0
 

@@ -2,7 +2,7 @@
 
 ## Executive summary
 
-This is the rule Smit Patel used to hand-label 20 real Airbnb postings as worth (or not
+This is the rule Smit P. used to hand-label 20 real Airbnb postings as worth (or not
 worth) a day of the fictional candidate's time. It was chosen on 2026-10-24, before any
 posting was labeled and before any prompt was run. The labels it produced are the answer
 key for the sampling report and the prompt experiment. It is a human judgment rule, and it
@@ -21,7 +21,7 @@ engineer in Boston, open to remote) if and only if **all** hold:
 
 Otherwise it is **NOT RELEVANT**.
 
-Chosen by Smit Patel, 2026-10-24, from options Claude offered in the build session (the
+Chosen by Smit P., 2026-10-24, from options Claude offered in the build session (the
 "IC + early-career + US" option).
 
 ## Amendment — rule v2 (2026-10-24, during labeling)

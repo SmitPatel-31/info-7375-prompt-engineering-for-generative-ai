@@ -1,5 +1,8 @@
-"""Tests written against CONTRACT.md. Expected verdicts below were worked out by hand from
-the rule in the contract, not read back from the code's output.
+"""Tests written against CONTRACT.md. Expected verdicts below were worked out (by Claude, step
+by step from the rule in the contract), not read back from the code's output.
+
+The fixture postings (ids 101-107, tests/fixture-day*.json) are CONSTRUCTED: invented by
+Claude on 2026-10-24 for testing. They are not real postings.
 
     python3 -m unittest discover -s tests -v
 """
@@ -7,7 +10,6 @@ import copy
 import io
 import json
 import os
-import random
 import sys
 import tempfile
 import unittest
@@ -94,29 +96,45 @@ def wrong_shifted_labels(jobs, resume):
 
 
 class WrongVersion1_LabelsOnWrongPostings(unittest.TestCase):
-    def test_validator_catches_shifted_labels(self):
+    def test_validator_catches_every_shifted_label(self):
         verdicts = wrong_shifted_labels(list(ALL.values()), RESUME)
-        caught = 0
         for v in verdicts:
-            try:
+            with self.subTest(claimed_id=v["posting_id"]), self.assertRaises(rule.JustificationError):
                 rule.validate_verdict(v, ALL[v["posting_id"]], RESUME)
-            except rule.JustificationError:
-                caught += 1
-        self.assertGreater(caught, 0, "a shifted labelling slipped through the validator")
+
+    def test_same_title_different_id_rejected(self):
+        """Real case: Airbnb listed three separate «Senior Compliance Lead, EMEA» postings
+        (8318103, 8318152, 8318155). Titles and text can match; only the id tells them apart."""
+        twin = {**JOBS1[101], "id": 999}  # constructed twin of 101
+        with self.assertRaises(rule.JustificationError):
+            rule.validate_verdict(rule.judge(JOBS1[101], RESUME), twin, RESUME)
+
+    def test_watch_pairs_verdicts_with_postings_whatever_the_board_order(self):
+        """End to end: reverse the board order in the second response; watch.run must still
+        attach each verdict to its own posting."""
+        with tempfile.TemporaryDirectory() as tmp:
+            day2 = load(DAY2)
+            day2["jobs"] = list(reversed(day2["jobs"]))
+            shuffled = os.path.join(tmp, "day2-reversed.json")
+            with open(shuffled, "w", encoding="utf-8") as f:
+                json.dump(day2, f)
+            state, out = os.path.join(tmp, "s.json"), os.path.join(tmp, "o")
+            for fixture, label in ((DAY1, "seeded-a"), (shuffled, "seeded-b")):
+                with redirect_stdout(io.StringIO()):
+                    watch.main(["--board", "airbnb", "--resume", RESUME_PATH, "--state", state,
+                                "--out", out, "--fixture", fixture, "--label", label])
+            rec = load(os.path.join(out, next(f for f in os.listdir(out) if f.startswith("run-") and "seeded-b" in f)))
+            for e in rec["judged"]:
+                v = e["rule"]
+                self.assertEqual(v["posting_title"], ALL[v["posting_id"]]["title"])
+                self.assertEqual(v["verdict"], HAND[v["posting_id"]])
+                rule.validate_verdict(v, ALL[v["posting_id"]], RESUME)
 
     def test_verdict_checked_against_another_posting_rejected(self):
         """Even when the quoted text would match (101 and 102 share wording), a verdict
         claiming id 101 must not validate against posting 102."""
         with self.assertRaises(rule.JustificationError):
             rule.validate_verdict(rule.judge(JOBS1[101], RESUME), JOBS1[102], RESUME)
-
-    def test_real_judge_is_order_independent(self):
-        jobs = list(ALL.values())
-        baseline = {j["id"]: rule.judge(j, RESUME)["verdict"] for j in jobs}
-        rnd = random.Random(7375)
-        for _ in range(5):
-            rnd.shuffle(jobs)
-            self.assertEqual({j["id"]: rule.judge(j, RESUME)["verdict"] for j in jobs}, baseline)
 
 
 # ---------------------------------------------------------------- wrong version 2
@@ -143,6 +161,14 @@ class WrongVersion2_JustificationCitesNothing(unittest.TestCase):
         bad["citations"][-1]["posting_text"] = "Haskell"
         with self.assertRaises(rule.JustificationError):
             rule.validate_verdict(bad, JOBS1[101], RESUME)
+
+    def test_part_word_citation_rejected(self):
+        """«Java» must not validate as evidence in a posting that only says «JavaScript»."""
+        v = rule.judge(JOBS1[103], RESUME)
+        v["citations"].append({"resume_field": "skills.languages[2]", "resume_value": "Java",
+                               "posting_field": "content", "posting_text": "Java", "effect": "skill found"})
+        with self.assertRaises(rule.JustificationError):
+            rule.validate_verdict(v, JOBS1[103], RESUME)
 
     def test_resume_only_citation_rejected(self):
         v = rule.judge(JOBS1[101], RESUME)
@@ -263,6 +289,7 @@ class ClaudeReplyValidator(unittest.TestCase):
             "verdict word": {**self.good, "verdict": "maybe"},
             "no resume fields": {**self.good, "resume_fields": []},
             "invented field": {**self.good, "resume_fields": ["skills.frameworks[0]"]},
+            "whole section, not a field": {**self.good, "resume_fields": ["personal"]},
             "no evidence": {**self.good, "posting_evidence": []},
             "invented quote": {**self.good, "posting_evidence": [{"field": "content", "text": "10 years of Haskell"}]},
             "long reason": {**self.good, "reason": "word " * 41},
@@ -270,6 +297,13 @@ class ClaudeReplyValidator(unittest.TestCase):
         for name, case in bad_cases.items():
             with self.subTest(case=name), self.assertRaises(claude_judge.ReplyRejected):
                 self.check(case)
+
+    def test_failed_cli_call_is_recorded_not_raised(self):
+        with mock.patch.object(claude_judge, "call_claude", side_effect=RuntimeError("claude exited 1")):
+            rec = claude_judge.judge(self.job, RESUME)
+        self.assertEqual(rec["status"], "CALL_FAILED")
+        self.assertIsNone(rec["verdict"])
+        self.assertEqual(rec["label"], "JUDGMENT (model)")
 
 
 if __name__ == "__main__":

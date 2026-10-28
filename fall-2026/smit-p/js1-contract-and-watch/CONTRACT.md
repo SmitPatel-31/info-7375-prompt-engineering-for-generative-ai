@@ -10,7 +10,7 @@ Claude for a second opinion, which is always labelled as a model's judgment and 
 counted as a fact. Every rule below is meant to be simple enough that a grader could take
 one posting and reach the same verdict by hand.
 
-**Provenance of the decisions.** Smit Patel chose the board, the persona, the relevance
+**Provenance of the decisions.** Smit P. chose the board, the persona, the relevance
 rule, the two wrong versions, and the failure sentence on 2026-10-24, in a Claude Code
 session where Claude offered options and Smit picked from them. Claude wrote those
 choices up as this file. Nothing in `src/` or `tests/` existed when this file was
@@ -111,3 +111,27 @@ not_relevant.
 
 **2026-10-24:** a failure is a posting added to the board between runs that the agent
 does not report as new, or one it reports as new that was already seen.
+
+---
+
+## Errata — added 2026-10-28, after implementation (nothing above was changed)
+
+Everything above this line is the contract as committed in `c29d163` on 2026-10-24,
+before any code existed. There is one exception: on 2026-10-28 the author's full name was
+shortened to "Smit P.", because the course folder stores no full names. Where the code
+differs from the text above, it is listed here rather than silently fixed:
+
+1. **State file shape.** "In" says the state file is a JSON *list* of posting ids. The
+   code writes an object, `{"board", "seen_ids": [...], "runs": [...]}`, so that the
+   state also records which runs produced it.
+2. **Validator is stricter than written.** "Wrong versions" says a verdict is rejected if
+   it has "no résumé-field citation and no posting-field citation". The code rejects a
+   verdict that lacks *either* one: it needs at least one of each.
+3. **Validator additions** (2026-10-28, after a TA-style review). A rule verdict's
+   recorded posting title must equal the posting it is checked against. Cited posting
+   text must match as a whole word. Claude's résumé fields must name a single value.
+   Re-validating all 87 saved Claude replies with these rules changed no outcome.
+4. **The worked example** in "The rule" («Software Engineer, Payments» with Java, Kafka,
+   AWS) is a **constructed** example, not a real posting.
+5. **Known gap, not fixed here:** the rule has no location condition. The hand labels
+   and the revised prompt do. See PROMPT-EXPERIMENT.md.

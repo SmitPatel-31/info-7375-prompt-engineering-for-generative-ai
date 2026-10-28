@@ -1,11 +1,13 @@
 # Action-surface comparison (Chapter 3)
 
+> **Authorship.** Drafted by Claude Code from runs it carried out on 2026-10-24 in Smit P.'s session. The hand labels and the decisions are Smit's (see DECISIONS.md). Every number can be recomputed with `python3 experiments/score.py`.
+
 ## Executive summary
 
-I gave Claude the same job three ways: judge one real posting (Software Engineer,
-Payments, remote-US, which I labeled relevant) against the fictional résumé. First I
-pasted everything into the message. Then I gave it files to read. Then I let it fetch the
-job board itself and keep its own state file. The two low-autonomy versions got the right
+Claude Code, in my build session, ran the same job three ways: judge one real posting
+(Software Engineer, Payments, remote-US, which I labeled relevant) against the fictional
+résumé. First with everything pasted into the message, then with files to read, then
+letting the agent fetch the job board itself and keep its own state file. The two low-autonomy versions got the right
 answer. The high-autonomy agent got it wrong. It fetched the board without the job
 descriptions, had five extra commands blocked by permissions, and still returned a
 confident, well-formed "not relevant" that passed my validator. More autonomy bought more
@@ -17,7 +19,7 @@ no tools.
 
 | | Surface 1: paste into chat | Surface 2: a file to read | Surface 3: agent fetches and keeps state |
 |---|---|---|---|
-| Command | `claude -p --tools ""` with the posting and résumé in the message | `claude -p --tools Read` in a directory holding `posting-8274152.json` and the résumé | `claude -p --tools Bash,Read,Write`, allowed: `Bash(curl …boards-api.greenhouse.io/*)`, Read, Write |
+| Command | `claude -p --tools ""` with the posting and résumé in the message. This is the CLI with no tools, standing in for "paste into a chat"; I did not use the claude.ai chat window | `claude -p --tools Read` in a directory holding `posting-8274152.json` and the résumé | `claude -p --tools Bash,Read,Write`, allowed: `Bash(curl …boards-api.greenhouse.io/*)`, Read, Write |
 | Evidence | `experiments/action-surfaces/surface1-*` | `surface2-result.json` | `surface3-result.json`, `surface3-agent-workdir/` |
 | Turns | 1 | 3 | 10 |
 | Permission denials | 0 | 0 | **5** |
@@ -27,10 +29,25 @@ no tools.
 
 What surface 3 actually did: it ran `curl` **without** `?content=true`, so its `raw.json`
 (147 KB, vs 2.7 MB for my script's fetch) has no job descriptions. It wrote a correct
-`state.json` (191 ids). It then tried to chain `ls`, `python3`, and `jq` onto the allowed
-`curl`, and to fetch a second URL with a pipe. All 5 were denied. It never saw the skills
-section. Its reason says it "couldn't confirm 2 skills", yet it returned a definite
-`not_relevant` anyway. Uncertainty went in as a verdict.
+`state.json` (191 ids). The 5 denied commands (in order, from `surface3-result.json`
+`permission_denials`):
+
+1. `curl … -o raw.json; ls -la; python3 …`: chained commands
+2. `python3 -I -c "…"`: not allowed
+3. `jq …`: not allowed
+4. `curl -s "…/jobs/8274152" | jq … | sed …`: a pipe
+5. `curl -s "https://boards-api.greenhouse.io/v1/boards/airbnb/jobs/8274152"`: a plain
+   fetch of the posting on the allowed host. It was refused **because of the permission
+   pattern (written by Claude Code for this run), not because of anything the agent did wrong**: the agent put the URL in
+   quotes, and the rule `Bash(curl -s https://boards-api.greenhouse.io/*)` only matches
+   the URL without quotes.
+
+So the agent did try, correctly, to get the posting's content. The permission
+configuration blocked it. It never saw the skills section. Its reason says it
+"couldn't confirm 2 skills", yet it returned a definite `not_relevant` anyway.
+Uncertainty went in as a verdict. This is itself an action-surface finding: once an
+agent has authority, a too-tight permission can also produce a wrong answer, not only a
+too-loose one.
 
 ## Read, write, send, authority, risk
 

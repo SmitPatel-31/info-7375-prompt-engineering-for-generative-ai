@@ -26,6 +26,26 @@ for me (Smit) to write.** A drafted log of events is not the same as my account 
 | F13 | Day-2 output in the terminal showed `&amp;` in titles, which looked like an escaping bug | checked the saved raw response: titles hold a plain `&`; the `&amp;` came from how the output was displayed, not from the agent | no change | `runs/raw-20261028T153510-live.json` |
 | F14 | 7826337 was reported new, but a posting with the same title (7716341) was already on the board | correct under the contract (new = new id). Whether it is a duplicate is not checked | unresolved, added to "Not checked" | `runs/run-*20261028*` |
 
+### 2026-10-28: a TA-style review before submitting
+
+Smit asked for every rubric line to be checked, after losing marks on an earlier
+assignment. A separate Claude reviewer (a subagent given only the brief and this folder)
+graded it and reported 15 issues. Each was checked against the files before acting.
+
+| # | Found | Done | Trace |
+|---|---|---|---|
+| F15 | The course folder rule says "no full names", and the files used my full name | replaced with "Smit P." in 6 files, **including one line of CONTRACT.md**, which is recorded in its errata | `git diff c29d163 -- CONTRACT.md` |
+| F16 | Three held-out labels were **inferred by Claude** from a rule I typed, while `labels.json` said "Claude did not choose them" | I labeled them explicitly (all not relevant, unchanged), and a correction was added to the file instead of rewriting it | DECISIONS D12, `labels.json` `_provenance_correction` |
+| F17 | PROMPT-EXPERIMENT said the revision came "after reading the development results". The timestamps show it was chosen 13 s after them, by Claude, and the Brazil miss had already appeared in sampling. Claude had also seen the held-out titles during selection | the report now says so, as a limitation | `experiments/results/*.jsonl` `asked_at` |
+| F18 | ACTION-SURFACES blamed the agent for all 5 denials. The 5th was a plain, correct fetch, blocked because the permission pattern did not match a quoted URL | rewritten to describe each denial as it happened | `surface3-result.json` |
+| F19 | 7 of 17 day-2 records name `claude-haiku-5-5`, because the code saved only the first model the CLI listed | the code now saves all (`models_used`). The day-2 record is **not** edited; it is explained in README | `src/claude_judge.py`, `runs/run-20261028T153510-live.json` |
+| F20 | Tests for wrong version 1 were weak: one only asked "caught > 0", and one could never fail | now every shifted label must be caught, plus a same-title-twin test and an end-to-end test through `watch.py`. The never-fail test was removed | `tests/test_contract.py` |
+| F21 | The "7 mutants, 6 caught" claim had no file behind it | added `tests/mutation_check.py` (13 mutants), which writes `tests/mutation-log.md`: 12/13 caught | `tests/mutation-log.md` |
+| F22 | The validators accepted part-word quotes (Java in JavaScript), whole résumé sections as "fields", and crashed the watch on a failed Claude call | fixed. All 87 saved Claude replies were re-validated: no outcome changed | CONTRACT.md errata 3 |
+| F23 | Small mismatches between contract text and code (state file shape, validator strictness), a constructed example not labeled as such, and selection-method text that does not match what ran | listed in CONTRACT.md errata and in a `selection.json` erratum. The original text is not rewritten | CONTRACT.md, `selection.json` |
+| F24 | Reports said "I asked / I gave" for steps Claude ran | corrected, and an authorship line added to each report | the three report files |
+| — | **Not fixed:** the rule still has no location check. Dev has 0 positive labels. No test was written by me before reading Claude's code | stated in README "Not checked" / PROMPT-EXPERIMENT limits | — |
+
 ## In my own words (Smit — to write)
 
 - What surprised me:

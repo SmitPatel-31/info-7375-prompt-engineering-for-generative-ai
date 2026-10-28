@@ -18,12 +18,14 @@ hand labels. The fetch-and-diff design is adapted from *The Reallocation Engine*
 | Course Chapters 1–3 and the assignment brief | the structure of the three reports and the sign-off |
 | Python 3.12 standard library; Claude Code CLI 2.1.305 | toolchain |
 
-## Decided and written by me (Smit Patel)
+## Decided and written by me (Smit P.)
 
 - Every choice in CONTRACT.md: board, persona, relevance rule, both wrong versions, and
   the failure sentence (DECISIONS.md D1–D6). Claude wrote them up as prose.
 - The hand-labeling rule and its amendment (D7, D10).
-- All 20 hand labels (D8, D9, D11).
+- All 20 hand labels (D8, D9, D11). Three of them were first inferred by Claude from a
+  rule I typed, then labeled explicitly by me on 2026-10-28 (D12).
+- The live day-2 run, 2026-10-28 (D14).
 - Review, correction, and signature of the sign-off in README.md. **Not done yet: see
   README.**
 - My own entries in FRICTIONAL.md. **Not done yet.**
@@ -36,7 +38,10 @@ hand labels. The fetch-and-diff design is adapted from *The Reallocation Engine*
   in the tests were worked out by Claude by hand from CONTRACT.md. I have not
   independently re-derived them.
 - Both prompt contracts in `prompts/`, including the choice of the one revision.
-- The mutation check (deliberately breaking the code to confirm the tests notice).
+- The mutation check (`tests/mutation_check.py`, deliberately breaking the code to confirm the tests notice).
+- A TA-style review on 2026-10-28 by a separate Claude subagent that saw only the brief
+  and this folder. Its 15 findings, and what was done with each, are in FRICTIONAL.md
+  F15–F24.
 - Running every live fetch, seeded run, and the 60 + 3 Claude calls.
 - First drafts of README.md, SAMPLING-REPORT.md, PROMPT-EXPERIMENT.md,
   ACTION-SURFACES.md, DECISIONS.md, this file, and the FRICTIONAL.md draft.
