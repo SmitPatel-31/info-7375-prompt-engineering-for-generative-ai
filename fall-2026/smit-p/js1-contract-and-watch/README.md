@@ -75,7 +75,7 @@ python3 experiments/run_claude.py --set sampling --prompt baseline --repeats 4 -
 | Live baseline | 2026-10-24 19:25 ET | `boards-api.greenhouse.io` | 191 | 0 (baseline) | `runs/raw-20261024T192545-live.json`, `runs/state.json`, `runs/report-…-live.md` |
 | **Seeded** baseline | 2026-10-24 19:26 | `runs/seeded/earlier-snapshot-SEEDED.json`: the live response with the 10 most recently published postings removed (**synthetic**, labeled in the file) | 181 | 0 (baseline) | `runs/seeded/*seeded-baseline*` |
 | **Seeded** run 2 | 2026-10-24 19:26 | the real live response | 191 | **10** (rule: 0 relevant; Claude: 0 relevant, 10/10 replies accepted) | `runs/seeded/*seeded-run2*`, `runs/seeded/state.json` |
-| Live run 2 | **not yet run**. Needs a second calendar day: run the watch command above on or after 2026-10-25 | | | | |
+| **Live run 2** | 2026-10-28 15:35 ET (run by Smit) | `boards-api.greenhouse.io` | 194 | **17** (14 removed since 10-24; rule: 0 relevant; Claude: 0 relevant, 17/17 replies accepted) | `runs/raw-20261028T153510-live.json`, `runs/run-…-live.json`, `runs/report-20261028T153510-live.md`, `runs/state.json` |
 
 Other evidence: `SAMPLING-REPORT.md`, `PROMPT-EXPERIMENT.md`, `ACTION-SURFACES.md`,
 `experiments/` (prompts, labels, raw replies, scores), `DECISIONS.md`, `SOURCES.md`,
@@ -122,7 +122,10 @@ drafts were wrong when re-checked against the data, and were corrected.
 
 **Not checked**
 
-1. The live second calendar-day run (only the seeded pair has run so far).
+1. Whether "new by id" matches "new job" for a person. On 10-28, 7826337 «Machine
+   Learning Engineer, Assistance Engineering» was new by id, but a posting with the same
+   title (7716341) was already on the board. I did not check whether it is a different
+   role or a duplicate.
 2. Whether the hand-worked expected verdicts in the tests are themselves right. Claude
    derived them, and I have not re-derived them by hand.
 3. The rule on boards other than Airbnb, on non-Greenhouse boards, or on postings whose

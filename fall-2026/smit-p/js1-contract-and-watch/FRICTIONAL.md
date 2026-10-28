@@ -22,7 +22,9 @@ for me (Smit) to write.** A drafted log of events is not the same as my account 
 | F9 | 1 of 20 sampling replies cited `devops_cicd[0]` (missing `skills.`) | rejected by the validator, counted as a fail | accepted the strictness | `sampling-baseline.jsonl` |
 | F10 | The agent with fetch/write tools fetched without `content=true`, had 5 commands denied, and returned a wrong but well-formed verdict that **passed the validator** | kept as evidence. The validator checks conformance, not adequacy | it informed the autonomy choice | ACTION-SURFACES.md |
 | F11 | A shell `echo ===DEV` line broke under zsh and stopped a chained command | re-ran the second command on its own | — | none (session only) |
-| F12 | A real second calendar day is not possible on day 1 | ran a clearly labeled seeded pair (an "earlier" snapshot built by removing the 10 newest postings) and left the live day-2 command in the README | **live day-2 run still to do** | `runs/seeded/` |
+| F12 | A real second calendar day is not possible on day 1 | ran a clearly labeled seeded pair (an "earlier" snapshot built by removing the 10 newest postings) and left the live day-2 command in the README | done 2026-10-28 by Smit: 194 seen, 17 new, 14 removed, 0 relevant by either judge | `runs/seeded/`, `runs/*20261028T153510*` |
+| F13 | Day-2 output in the terminal showed `&amp;` in titles, which looked like an escaping bug | checked the saved raw response: titles hold a plain `&`; the `&amp;` came from how the output was displayed, not from the agent | no change | `runs/raw-20261028T153510-live.json` |
+| F14 | 7826337 was reported new, but a posting with the same title (7716341) was already on the board | correct under the contract (new = new id). Whether it is a duplicate is not checked | unresolved, added to "Not checked" | `runs/run-*20261028*` |
 
 ## In my own words (Smit — to write)
 
