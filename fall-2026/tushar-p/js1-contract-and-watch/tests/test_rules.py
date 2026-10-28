@@ -33,6 +33,13 @@ def test_strip_html_unescapes_then_drops_tags():
     assert "Python" in text and "Java SQL" in text
 
 
+def test_r4_reads_years_written_with_double_escaped_nbsp():
+    # Real-shaped Greenhouse content: the HTML is escaped, and so is the &nbsp; inside it.
+    p = posting(content="&lt;p&gt;5+&amp;nbsp;years of experience&lt;/p&gt;")
+    entry = rules.judge(p, FIELDS, RUN_DATE)["rule_justification"][3]
+    assert entry["result"] == "fail", entry["value_found"]
+
+
 def test_skill_only_in_tag_attribute_is_not_found():
     content = escaped('<p><a href="https://python.org/react">Apply here</a></p>')
     assert result_of(rules.check_r6_skills(strip_html(content), SKILLS)) == "fail"
