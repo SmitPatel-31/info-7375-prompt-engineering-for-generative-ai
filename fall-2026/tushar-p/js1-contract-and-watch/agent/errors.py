@@ -35,3 +35,7 @@ class StateError(AgentError):
 
 class ValidationError(AgentError):
     """A justification or a Claude reply does not match the contract's format."""
+
+
+class ClaudeAuthError(AgentError):
+    """The Claude API rejected the API key (HTTP 401). The run stops at the first call."""

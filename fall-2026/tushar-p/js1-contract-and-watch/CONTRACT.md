@@ -1,6 +1,6 @@
 # CONTRACT — Job-Search Agent 1
 
-Version 0.3 · 2026-10-27 · Tushar Patel
+Version 0.4 · 2026-10-29 · Tushar Patel
 
 Scope: one Greenhouse board, one fictional persona résumé, new postings only, every verdict justified.
 
@@ -27,6 +27,9 @@ Scope: one Greenhouse board, one fictional persona résumé, new postings only, 
   - R2 has no résumé field, so its justification entry uses `resume_field: "none"` (R2 only).
   - Claude also receives the run date and the posting id.
   - The no-content stop applies to live fetches too (after the raw file is saved).
+- **v0.4 (2026-10-29):** two changes after run 2 (2026-10-28), where a bad API key made all 16 Claude calls fail with HTTP 401 and the run still updated the state file.
+  - An auth failure (HTTP 401) stops the run at the first call, with no output and no state update. Other API errors still mark that posting's Claude verdict invalid.
+  - The Claude judge prompt is read from a file (default `prompts/baseline.txt`). Its SHA-256 is recorded in the experiment results.
 
 ## In
 
@@ -47,6 +50,7 @@ Scope: one Greenhouse board, one fictional persona résumé, new postings only, 
 - **Missing field:** a required key that is absent, has the wrong type, or is an empty list. The agent stops with an error before any fetch and produces no output.
 - **Rule undefined:** this contract is written for `years_experience` = 0, `work_country` = "US", and a boolean `needs_sponsorship`. For any other `years_experience` or `work_country`, the agent stops with "rule undefined for this value". If `needs_sponsorship` is false, R5 passes as not applicable.
 - **No API key:** if `ANTHROPIC_API_KEY` is not set and `--no-claude` is not given, the agent stops with an error before fetching.
+- **Bad API key:** if the Claude API answers HTTP 401, the run stops at once. It writes no output and does not update the state file.
 
 ## Out
 

@@ -1,71 +1,42 @@
 """The Claude judge. Its verdicts are model judgment, never a record.
 
 Claude receives only the persona's rule fields, the posting's title, location, dates and
-HTML-stripped content, and R1–R6 in plain language. Model fallback is off: the request
-sends no fallback parameter, so the model that answers is the configured one.
+HTML-stripped content, and R1–R6 in plain language. The system prompt is read from a text
+file (prompts/baseline.txt by default), so a prompt change is a diff between two files.
+Model fallback is off: the request sends no fallback parameter, so the model that answers
+is the configured one.
 """
 
+import hashlib
 import json
 from datetime import date
 from pathlib import Path
 
+from . import PROJECT_DIR
 from .allowlist import check_url
-from .errors import ValidationError
+from .errors import ClaudeAuthError, ConfigError, ValidationError
 from .persona import RULE_FIELDS
 from .validator import POSTING_FIELDS, VERDICTS, validate_claude_reply
 
 CLAUDE_LABEL = "model judgment"
 
-SYSTEM_PROMPT = """\
-You judge whether one job posting is relevant to one job seeker. You receive the
-seeker's rule fields from their résumé, one posting, and the run date.
+DEFAULT_PROMPT_PATH = PROJECT_DIR / "prompts" / "baseline.txt"
 
-Apply these six checks. Each check is pass, fail, or unknown. Matching is whole-word
-and case-insensitive unless a check says otherwise.
 
-R1 Title. Pass if the title contains one of job_search.target_titles. Fail if it
-contains none. Fail if it contains Senior, Staff, Principal, Lead, Manager, or Intern;
-these words win over target titles. "Internal" and "Internship" are not "Intern", and
-"Software Engineering" is not "Software Engineer".
+def load_prompt(path: Path = DEFAULT_PROMPT_PATH) -> tuple[str, str]:
+    """(system prompt text, SHA-256 of the file's bytes). The text is sent exactly as stored."""
+    try:
+        data = Path(path).read_bytes()
+    except OSError as err:
+        raise ConfigError(f"cannot read prompt file {path}: {err}") from None
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError as err:
+        raise ConfigError(f"prompt file {path} is not UTF-8: {err}") from None
+    if not text.strip():
+        raise ConfigError(f"prompt file {path} is empty")
+    return text, hashlib.sha256(data).hexdigest()
 
-R2 Freshness. The posting date is first_published, or updated_at if that is missing,
-taken as a calendar date in America/New_York. 21 days or fewer before the run date:
-pass. 22 or more: fail. A future date: pass. Both dates missing: unknown.
-
-R3 Location. job_search.work_country is US. Pass if location.name shows the US: "United
-States", "USA", "U.S.", uppercase "US" (also in forms like "US-Remote"); the cities San
-Francisco, South San Francisco, New York, New York City, Seattle, Chicago, Atlanta; the
-short forms SF, NYC, NY, SEA, CHI, ATL, DC; a US state name; or an uppercase US state
-abbreviation directly after a comma or semicolon (", WA"), except "CA", which on this
-board means Canada. One US match among several locations is enough. Unknown if the whole
-value is only "Remote" or a placeholder ("N/A", "na", "LOCATION", empty). Otherwise fail.
-
-R4 Experience. job_search.years_experience is 0, so the seeker is a new grad (0–3
-years). Find every "N+ years" and every "N–M years" (also "N-M" and "N to M") in the
-content; each one's minimum is N. Take the largest of those minimums: 3 or less is pass,
-more than 3 is fail. No matches: unknown. Plain "N years" and spelled-out numbers do not
-count.
-
-R5 Sponsorship. job_search.needs_sponsorship is true. Fail if the content contains
-"unable to sponsor", "will not sponsor", "does not sponsor", "no sponsorship", "without
-sponsorship", or "without the need for sponsorship". Otherwise pass.
-
-R6 Skills. Pass if at least one item in skills appears as a whole word in the content
-("Java" does not match "JavaScript"). Otherwise fail.
-
-Verdict: any check fails -> not_relevant. Otherwise any check unknown -> cannot_tell.
-Otherwise -> relevant.
-
-Reply with one JSON object and nothing else:
-{"posting_id": "<the posting_id you were given, as a string>",
- "verdict": "relevant" | "not_relevant" | "cannot_tell",
- "justification": [{"resume_field": "...", "posting_field": "...", "evidence": "..."}]}
-
-Every justification entry must name the résumé field and the posting field it relies on.
-resume_field must be one of: """ + ", ".join(RULE_FIELDS) + """.
-posting_field must be one of: """ + ", ".join(POSTING_FIELDS) + """.
-evidence quotes or states the value you found. Use no other keys.
-"""
 
 OUTPUT_SCHEMA = {
     "type": "object",
@@ -92,8 +63,13 @@ OUTPUT_SCHEMA = {
 
 
 def build_request(posting: dict, content_text: str, fields: dict, run_date: date,
-                  model: str, max_tokens: int) -> dict:
-    """Keyword arguments for messages.create. `fields` holds only the five rule fields."""
+                  model: str, max_tokens: int, system_prompt: str | None = None) -> dict:
+    """Keyword arguments for messages.create. `fields` holds only the five rule fields.
+
+    `system_prompt` is the text from load_prompt; None reads the default prompt file.
+    """
+    if system_prompt is None:
+        system_prompt, _ = load_prompt()
     payload = {
         "run_date": run_date.isoformat(),
         "resume_rule_fields": {key: fields[key] for key in RULE_FIELDS},
@@ -109,7 +85,7 @@ def build_request(posting: dict, content_text: str, fields: dict, run_date: date
     return {
         "model": model,
         "max_tokens": max_tokens,
-        "system": SYSTEM_PROMPT,
+        "system": system_prompt,
         "messages": [{"role": "user", "content": json.dumps(payload, ensure_ascii=False, indent=2)}],
         "output_config": {"format": {"type": "json_schema", "schema": OUTPUT_SCHEMA}},
     }
@@ -142,16 +118,26 @@ def _dump(response) -> str:
 
 
 def judge(client, request: dict, posting_id, reply_path: Path) -> dict:
-    """Call Claude once, save the raw reply, and validate it. Invalid output is never repaired."""
-    reply_path.parent.mkdir(parents=True, exist_ok=True)
+    """Call Claude once, save the raw reply, and validate it. Invalid output is never repaired.
+
+    A rejected API key (HTTP 401) raises ClaudeAuthError instead: every later call would
+    fail the same way, so the run stops rather than marking every posting invalid.
+    """
     try:
         response = client.messages.create(**request)
     except Exception as err:  # any API or network failure leaves nothing to validate
         status = getattr(err, "status_code", None)
+        if status == 401:
+            raise ClaudeAuthError(
+                f"Claude API rejected the API key (HTTP 401, {type(err).__name__}) at posting "
+                f"{posting_id}; run stopped. Check ANTHROPIC_API_KEY."
+            ) from None
+        reply_path.parent.mkdir(parents=True, exist_ok=True)
         reason = f"API call failed: {type(err).__name__}" + (f" (HTTP {status})" if status else "")
         reply_path.write_text(reason + "\n", encoding="utf-8")
         return _invalid(reason, None, reply_path)
 
+    reply_path.parent.mkdir(parents=True, exist_ok=True)
     reply_path.write_text(_dump(response), encoding="utf-8")
     model = getattr(response, "model", None)
     if getattr(response, "stop_reason", None) == "refusal":

@@ -59,6 +59,14 @@ class FakeResponse:
         }, indent=indent)
 
 
+class FakeAPIStatusError(Exception):
+    """Stands in for the SDK's APIStatusError subclasses, which carry status_code."""
+
+    def __init__(self, status_code):
+        super().__init__(f"Error code: {status_code}")
+        self.status_code = status_code
+
+
 class FakeMessages:
     def __init__(self, reply):
         self._reply = reply

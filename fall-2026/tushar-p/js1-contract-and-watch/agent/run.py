@@ -73,12 +73,13 @@ def run(options: RunOptions, *, env=None, opener=None,
 
     # Everything that can stop the run happens before any network call.
     fields = load_rule_fields(config["persona_path"])
-    api_key = None
+    api_key = system_prompt = None
     if not options.no_claude:
         api_key = env.get("ANTHROPIC_API_KEY")
         if not api_key:
             raise ConfigError("ANTHROPIC_API_KEY is not set; export it in your shell or pass --no-claude")
         check_url(config["claude_base_url"])
+        system_prompt, _ = claude_judge.load_prompt()
     seen = state.load_seen(config["state_path"])
 
     if options.from_raw:
@@ -126,9 +127,10 @@ def run(options: RunOptions, *, env=None, opener=None,
         else:
             request = claude_judge.build_request(
                 job, strip_html(job.get("content")), fields, options.run_date,
-                config["model"], config["max_tokens"],
+                config["model"], config["max_tokens"], system_prompt,
             )
             reply_path = out_dir / "claude-replies" / run_id / f"{job['id']}.json"
+            # A 401 raises ClaudeAuthError here: no out/ files and no state are written.
             record.update(claude_judge.judge(client, request, job["id"], reply_path))
             record["claude_reply_path"] = display_path(reply_path)
         records.append(record)
