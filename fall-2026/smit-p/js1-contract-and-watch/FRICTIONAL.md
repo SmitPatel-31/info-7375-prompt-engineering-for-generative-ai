@@ -4,8 +4,9 @@
 
 This is an honest log of what went wrong, what was tried, and what is still unresolved
 while building Job-Search Agent 1. F1–F11 happened on 2026-10-24. F12–F25 were added on
-2026-10-28. Each one traces to a commit, a file, or a test. **The section "In my own words" is
-for me (Smit) to write.** A drafted log of events is not the same as my account of them.
+2026-10-28. Each one traces to a commit, a file, or a test. The last section holds my own
+answers, selected by me from statements Claude offered. A drafted log of events is not
+the same as my account of them.
 
 ## Log of events (drafted by Claude from the session; each item is traceable)
 
@@ -48,9 +49,24 @@ graded it and reported 15 issues. Each was checked against the files before acti
 | F26 | 2026-10-30: the hand check was meant to be mine. I asked Claude to fill in `hand-check/predictions.json` instead. Claude also found that the test command it had given me (`tests.test_hand_check`) failed, because `tests/` is not a package | Claude wrote the predictions from the posting text, labeled `by: Claude`, before running the test: 2/2 OK. README, SOURCES, and the test file say who wrote them. The command was corrected to `discover -p` | so the code has no independent check by me | `hand-check/predictions.json` |
 | — | **Not fixed:** the rule still has no location check. Dev has 0 positive labels. No test was written by me before reading Claude's code | stated in README "Not checked" / PROMPT-EXPERIMENT limits | — |
 
-## In my own words (Smit — to write)
+## My answers (selected by Smit from statements Claude offered, 2026-10-30)
 
-- What surprised me:
-- What I checked myself, and how:
-- What I would not have caught without the tests or the hand labels:
-- What I disagree with in the drafts above:
+I asked Claude to write this section. It would not put words in my mouth, so it offered
+statements and I picked the ones that are true for me. These are my selections; the
+sentences are Claude's wording.
+
+- **What surprised me:**
+  - Claude called the São Paulo job relevant every single time it was asked: repeatable, but wrong.
+  - Airbnb had almost no new-grad software roles, so the board was a poor fit for the persona.
+  - All tests passed first time, and only deliberately breaking the code showed some were too weak.
+- **What I checked myself:**
+  - I read and labeled the 20 sample postings myself.
+  - I ran the live watch on Oct 28 and saw 17 new postings, 0 relevant.
+  - I ran the full test suite on Oct 28 and saw it pass.
+- **What I would not have caught without the tests or the hand labels:**
+  - Without my labels I would not have seen that the rule calls Brazil jobs relevant for a US OPT student.
+  - Without the mutation check I would have trusted tests that could not fail.
+- **What I disagree with in the drafts above:** I don't disagree with anything in the drafts.
+- **Not selected** (offered, but not true for me or not chosen): that the fetch-tool agent's
+  confident wrong answer surprised me; that I read the three reports; that I would have
+  trusted Claude's verdicts for being fluent; that I would have believed the false 13/13.

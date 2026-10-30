@@ -30,7 +30,7 @@ hand labels. The fetch-and-diff design is adapted from *The Reallocation Engine*
   README.**
 - The hand-check predictions were **not** written by me. Claude wrote them at my request
   on 2026-10-30 (`hand-check/predictions.json`, field `by`).
-- My own entries in FRICTIONAL.md. **Not done yet.**
+- My answers in FRICTIONAL.md (selected by me from statements Claude offered, 2026-10-30).
 
 ## Contributed by Claude (Claude Code, Opus 5.5, session of 2026-10-24)
 
