@@ -12,7 +12,7 @@ This is where things went wrong or didn't go the way I expected while building J
 
 **I didn't know what some contract terms meant.** I had to ask what "cannot tell" and "Refuses" meant before I could answer the contract questions.
 
-**My contract had way more holes than I thought.** I committed CONTRACT.md v0.1 and the persona before writing any code (`TODO(hash)`). Then Claude Code read it against the real data and stopped with 16 questions (A–P) instead of guessing. Some of the bad ones:
+**My contract had way more holes than I thought.** I committed CONTRACT.md v0.1 and the persona before writing any code (`a842c11`). Then Claude Code read it against the real data and stopped with 16 questions (A–P) instead of guessing. Some of the bad ones:
 - "Intern" matched "Software Engineer, Internal Identity" because of substring matching.
 - Cities with no state (Chicago, San Francisco, Seattle) failed the location rule.
 - "London OR Dublin" passed, because "OR" was read as Oregon.
@@ -20,15 +20,15 @@ This is where things went wrong or didn't go the way I expected while building J
 - A posting with no date would pass R2.
 - My "seen posting reported as new" test couldn't actually catch the bug, because the first run is always a baseline with 0 new.
 
-Claude chat also noticed that Claude Code was planning to gitignore `state/`, which the assignment requires us to submit. I fixed all of this in v0.2 (`TODO(hash)`). My lesson: a contract isn't precise until you check it against real data.
+Claude chat also noticed that Claude Code was planning to gitignore `state/`, which the assignment requires us to submit. I fixed all of this in v0.2 (`eb2d5ee`). My lesson: a contract isn't precise until you check it against real data.
 
 **The real location data was messy.** I pulled all the real location values and built the US list from them. Some abbreviations were traps. "Toronto, CA" is Canada, not California. "London OR Dublin" isn't Oregon. "IN-Bengaluru" isn't Indiana. Claude Code's first fix (uppercase only) wouldn't have stopped "OR", because the data writes it in caps. I made abbreviations count only right after a comma or semicolon. "AMER" and "Remote North America" still fail, which I'm leaving as known gaps.
 
-**The build found even more gaps (v0.3).** R2 compares dates, so it has no résumé field, but my contract says every justification has to cite one. Claude also needed the run date and posting id, which weren't on my list. I updated the contract to v0.3 (`TODO(hash)`).
+**The build found even more gaps (v0.3).** R2 compares dates, so it has no résumé field, but my contract says every justification has to cite one. Claude also needed the run date and posting id, which weren't on my list. I updated the contract to v0.3 (`f9a5418`).
 
 **Claude Code left the requirements unpinned.** `requirements.txt` had no versions in it, so I pinned `anthropic==2.3.0` and `pytest==9.2.0` myself and re-ran pytest (236 passed) before committing.
 
-**All 236 tests passed on the first try, which made me suspicious.** I did a mutation test: I changed `max(minimums)` to `min(minimums)` at line 151 of `agent/rules.py`. Only 1 test failed: `test_r4_experience[5+ years backend, 2+ years Go-fail]` (it said "largest 2" and passed instead of failing). So the test works, but only one test out of 236 actually checks that case. Evidence: `TODO(hash)`.
+**All 236 tests passed on the first try, which made me suspicious.** I did a mutation test: I changed `max(minimums)` to `min(minimums)` at line 151 of `agent/rules.py`. Only 1 test failed: `test_r4_experience[5+ years backend, 2+ years Go-fail]` (it said "largest 2" and passed instead of failing). So the test works, but only one test out of 236 actually checks that case. Evidence: `1d3e809`.
 
 **I overwrote my own evidence.** After undoing the mutation, I ran pytest with `tee` into the same file, which replaced the failing output with "236 passed". I had to redo the mutation and save the two runs to separate files.
 
@@ -63,7 +63,7 @@ The key lives outside the repo (`~/.js1-anthropic-key`, chmod 600). I ran `grep 
 
 Two more small slips: `git show HEAD:state/seen_ids.json` failed because the path needed to be `./state/...`, and I pressed control+C while the SDK was still importing. Neither did any damage.
 
-**The agent didn't stop at the first 401.** It made 16 failing calls and then updated the state anyway. On Oct 29 I had Claude Code fix it to stop right away (exit code 2, no outputs, no state change). It's in contract v0.4 (`TODO(hash)`).
+**The agent didn't stop at the first 401.** It made 16 failing calls and then updated the state anyway. On Oct 29 I had Claude Code fix it to stop right away (exit code 2, no outputs, no state change). It's in contract v0.4 (`cf14bae`).
 
 ## Oct 29
 
@@ -71,7 +71,7 @@ Two more small slips: `git show HEAD:state/seen_ids.json` failed because the pat
 
 **Claude cited a field that made no sense.** For R2 (posting age) it cited `years_experience`. The schema forces it to pick a résumé field, and my validator only checks that the name exists, not that it's relevant. So my "cites no fields" test can be passed by citing the wrong field. This is still open.
 
-**My one prompt change proves less than I'd like.** I changed R4 in `prompts/revised.txt` to count "N years" and spelled-out numbers (only lines 27–28 differ, committed before running: `TODO(hash)`). Dev went to 10/10 (`experiments/results/revised-dev-2026-10-29T191746.*`), but I designed the change for that exact posting, so that's expected. Held-out was 10/10 for both prompts (logged in `experiments/results/HELDOUT-LOG.md`), because it has no relevant postings at all.
+**My one prompt change proves less than I'd like.** I changed R4 in `prompts/revised.txt` to count "N years" and spelled-out numbers (only lines 27–28 differ, committed before running: `f8dacb2`). Dev went to 10/10 (`experiments/results/revised-dev-2026-10-29T191746.*`), but I designed the change for that exact posting, so that's expected. Held-out was 10/10 for both prompts (logged in `experiments/results/HELDOUT-LOG.md`), because it has no relevant postings at all.
 
 **Way 1 (pasting into a chat) disagreed with my label.** I opened a new claude.ai chat, typed a short description of Cole, and pasted posting 8314283. Claude said `not_relevant`, because the posting asks for 2 years and Cole has 0, and it requires Go and Ruby, which Cole doesn't have. My message didn't include my rule that 0–3 years is OK, so Claude used its own idea of "new grad." Small slip: my first save failed because I typed `actio-surface`.
 
