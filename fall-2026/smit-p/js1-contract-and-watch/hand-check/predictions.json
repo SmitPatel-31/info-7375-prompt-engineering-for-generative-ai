@@ -1,26 +1,26 @@
 {
- "_how": "Fill in by HAND, before running tests/test_hand_check.py. Read hand-check/<id>.txt and apply the rule in CONTRACT.md: (1) title contains a role keyword (Software Engineer)? (2) title contains senior/sr/staff/principal/manager? (3) which distinct r\u00e9sum\u00e9 skills (skills.* lists except familiar_with_not_shipped) appear as whole words? Write the skills you found, and your verdict. Do not look at the code's output first.",
+ "_how": "Filled in by Claude (Opus 5.5) on 2026-10-30, at Smit's request, by reading hand-check/<id>.txt and applying the rule in CONTRACT.md, before running tests/test_hand_check.py. This is NOT an independent hand check by Smit: the reader and the code's author are the same model.",
  "source": "runs/raw-20261024T192545-live.json",
- "by": "",
- "date": "",
+ "by": "Claude (Opus 5.5), not a hand check by Smit",
+ "date": "2026-10-30",
  "predictions": {
   "8274152": {
-   "title_check": "",
-   "seniority_word": "",
-   "skills_found": [],
-   "verdict": ""
+   "title_check": "yes",
+   "seniority_word": "none",
+   "skills_found": ["Java", "Python", "SQL"],
+   "verdict": "relevant"
   },
   "8154749": {
-   "title_check": "",
-   "seniority_word": "",
-   "skills_found": [],
-   "verdict": ""
+   "title_check": "yes",
+   "seniority_word": "none",
+   "skills_found": ["TypeScript", "Java", "Python", "Jenkins"],
+   "verdict": "relevant"
   },
   "8165656": {
-   "title_check": "",
-   "seniority_word": "",
-   "skills_found": [],
-   "verdict": ""
+   "title_check": "yes",
+   "seniority_word": "Senior",
+   "skills_found": ["SQL", "Kubernetes"],
+   "verdict": "not_relevant"
   }
  }
 }

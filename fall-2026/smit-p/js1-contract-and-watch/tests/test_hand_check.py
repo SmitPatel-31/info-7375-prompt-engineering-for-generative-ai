@@ -1,9 +1,10 @@
-"""Compare Smit's HAND predictions (hand-check/predictions.json) with the rule's output.
+"""Compare predictions read from the posting text (hand-check/predictions.json) with the rule.
 
-The predictions are written by Smit, by hand, from CONTRACT.md and the posting text,
-before this test is run. The harness was written by Claude. Skips until predictions exist.
+The predictions were meant to be Smit's hand check. On 2026-10-30 Smit asked Claude to
+write them instead; the file's "by" field says so. The harness was written by Claude.
+Skips until predictions exist.
 
-    python3 -m unittest tests.test_hand_check -v
+    python3 -m unittest discover -s tests -p 'test_hand_check.py' -v
 """
 import json
 import os

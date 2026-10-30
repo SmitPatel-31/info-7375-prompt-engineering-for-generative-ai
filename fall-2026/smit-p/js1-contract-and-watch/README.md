@@ -41,7 +41,7 @@ python3 -m unittest discover -s tests -v
 python3 src/watch.py --board airbnb --resume persona/aarav-patel.resume.json --state runs/state.json --out runs/ --label live --claude
 ```
 
-The first command runs the 27 contract tests offline, plus 2 hand-check tests that skip until `hand-check/predictions.json` is filled in. `python3 tests/mutation_check.py` breaks the code 13 ways and records which bugs the tests notice (`tests/mutation-log.md`). The second is the watch. On a
+The first command runs the 27 contract tests offline, plus 2 hand-check tests that compare `hand-check/predictions.json` with the rule. `python3 tests/mutation_check.py` breaks the code 13 ways and records which bugs the tests notice (`tests/mutation-log.md`). The second is the watch. On a
 fresh state file it is a baseline and reports nothing. Run it again on another day and
 it reports only the postings that appeared in between.
 
@@ -106,7 +106,7 @@ src/claude_judge.py         Claude under a prompt contract + strict reply valida
 src/watch.py                allow-listed fetch, raw saved, diff by id, reports
 tests/test_contract.py      27 tests incl. both wrong versions; fixtures day1/day2 (CONSTRUCTED postings)
 tests/mutation_check.py     deliberate-bug check → tests/mutation-log.md
-tests/test_hand_check.py    my hand predictions (hand-check/) vs the rule
+tests/test_hand_check.py    predictions read from 3 postings (hand-check/, written by Claude) vs the rule
 prompts/                    baseline.md, revision.md (one change)
 experiments/                selection, labeling rule, hand labels, run_claude.py, score.py, results/
 runs/                       raw responses, state files, run records, reports
@@ -131,9 +131,9 @@ runs/                       raw responses, state files, run records, reports
 | Claude replies outside the fixed format rejected (11 cases); a failed CLI call is recorded, not crashed | `ClaudeReplyValidator.*` |
 | The tests notice deliberate bugs | `tests/mutation_check.py` → `tests/mutation-log.md`: 12 of 13 caught. The survivor (M1) removes a guard that a second check already covers |
 | Report numbers match the raw results | recomputation, `experiments/score.py` |
-| The rule's verdict and skill count on 3 real postings match **my own hand prediction** | `tests/test_hand_check.py` against `hand-check/predictions.json`. **[Smit: fill in by hand, run, record the result here]** |
+| The rule's verdict and skill set on 3 real postings match a reading of the posting text made before the test was run | `tests/test_hand_check.py` against `hand-check/predictions.json`: 2 tests, OK (2026-10-30). **The predictions were written by Claude at my request, not by me**, so this is not an independent check: the same model wrote the code and the reading |
 
-**How:** by hand (me): the 20 hand labels (three confirmed explicitly on 10-28) and the live day-2 run. I ran the full suite myself on 2026-10-28 (`python3 -m unittest discover -s tests -v`): 29 tests, `OK (skipped=2)`. The 2 skipped are the hand-check tests, which wait for my predictions. Every test was written by Claude against
+**How:** by hand (me): the 20 hand labels (three confirmed explicitly on 10-28) and the live day-2 run. I ran the full suite myself on 2026-10-28 (`python3 -m unittest discover -s tests -v`): 29 tests, `OK (skipped=2)`. The 2 skipped were the hand-check tests, which waited for predictions. On 2026-10-30, with the predictions filled in by Claude, the suite ran 29 tests, `OK`. Every test was written by Claude against
 CONTRACT.md, right **after** Claude wrote the code, in the same session. So none of them
 is an independent test I wrote before reading Claude's code. The numbers in
 the reports were checked by recomputation (`score.py`). Two claims in Claude's report
@@ -146,7 +146,8 @@ drafts were wrong when re-checked against the data, and were corrected.
    title (7716341) was already on the board. I did not check whether it is a different
    role or a duplicate.
 2. Whether the hand-worked expected verdicts in the tests are themselves right. Claude
-   derived them, and I have not re-derived them by hand.
+   derived them, and I have not re-derived them by hand. This includes the 3 hand-check
+   predictions: Claude wrote them on 2026-10-30 at my request.
 3. The rule on boards other than Airbnb, on non-Greenhouse boards, or on postings whose
    HTML differs from Airbnb's.
 4. Claude's verdict stability at other temperatures, on other models, or on other days.
