@@ -26,8 +26,7 @@ hand labels. The fetch-and-diff design is adapted from *The Reallocation Engine*
 - All 20 hand labels (D8, D9, D11). Three of them were first inferred by Claude from a
   rule I typed, then labeled explicitly by me on 2026-10-28 (D12).
 - The live day-2 run, 2026-10-28 (D14).
-- Review, correction, and signature of the sign-off in README.md. **Not done yet: see
-  README.**
+- Review and signature of the sign-off in README.md (signed 2026-10-30).
 - The hand-check predictions were **not** written by me. Claude wrote them at my request
   on 2026-10-30 (`hand-check/predictions.json`, field `by`).
 - My answers in FRICTIONAL.md (selected by me from statements Claude offered, 2026-10-30).

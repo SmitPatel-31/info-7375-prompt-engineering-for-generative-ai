@@ -114,9 +114,6 @@ runs/                       raw responses, state files, run records, reports
 
 ## Sign-off — Job-Search Agent 1
 
-> **DRAFT by Claude. Not signed.** Smit must read it, correct anything untrue, and then
-> sign or withhold it. The "how" column states honestly that Claude wrote the tests.
-
 **Checked**
 
 | Property | Test (`tests/test_contract.py`) or check |
@@ -160,7 +157,7 @@ known location gap. Not claiming that 9/10 means anything with one positive labe
 claiming that Claude's verdicts are facts. Not claiming that the revision prompt is
 better.
 
-**Signed or withheld:** ____________ (name, date)
+**Signed:** Smit P., 2026-10-30. Drafted by Claude; I read it and confirmed it is true for me. I did not write the tests or the hand-check predictions, as stated above.
 
 ## Driver's seat
 
@@ -171,4 +168,4 @@ better.
 | The labeling rule | point out when my labels contradict my rule | decide whether the rule or the labels change | only I know which one I meant | D9–D10: my typed answer contradicted v1, and I chose to amend (LABELING-RULE.md) |
 | Code, tests, runs | write and run all of it; break its own code to test the tests | run the tests myself, run the live day-2 watch, check the numbers | I am the one who has to explain any verdict to a TA; code I have never run is not verified by me | SOURCES.md; DECISIONS D14 (I ran day 2); `tests/mutation-log.md` |
 | Is a job worth a day? | flag, cite, sort | decide | that is my time and my visa clock | every report ends at "you decide" |
-| Signing | draft | sign or withhold | my name goes on it | the blank line above |
+| Signing | draft | sign or withhold | my name goes on it | the signature line above (2026-10-30) |
