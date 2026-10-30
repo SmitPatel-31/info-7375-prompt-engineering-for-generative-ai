@@ -1,171 +1,366 @@
 # Job-Search Agent 1 — The Contract and the Watch
 
-**Smit P. · INFO 7375 · Fall 2026 · Chapters 1–3**
+**Smit Patel · INFO 7375 · Fall 2026 · Chapters 1–3**
 
-## Executive summary
+## Executive Summary
 
-This is the first layer of a job-search agent. It watches Airbnb's public job board,
-remembers which postings it has already seen, and reports only the new ones. For each
-new posting it gives two verdicts on whether the job fits a fictional candidate's
-résumé. One comes from a written rule that anyone can recompute by hand. The other comes
-from Claude and is always labeled as a model's judgment. Every verdict names the résumé
-fields and posting text behind it.
+For this assignment, I built the first part of a job-search agent that monitors Airbnb's public job board and identifies newly posted jobs. The system keeps track of jobs it has already seen and reports only new postings when it runs again.
 
-What it found on 2026-10-24: Airbnb had 191 postings, and only 3 fit the candidate under
-the written rule. The more useful finding is a gap in my own contract. The rule ignores
-location, so it calls Software Engineer jobs in Brazil "relevant" for a US student on OPT.
-Claude made the same mistake, identically, every time it was asked. Repeatable is not the
-same as right. A prompt revision that adds a US-location condition fixed the verdicts but
-broke the output format, because the format has nowhere to cite a location. That bug is
-still open. Fetching and state stay in tested code; Claude only judges text it is
-handed.
+For each new job, the system checks whether it matches a fictional candidate's résumé using two approaches. The first is a rule-based approach where the decision can be verified manually. The second uses Claude to evaluate the job based on a prompt. Both approaches provide explanations using information from the résumé and job posting.
 
-## Run record
+During the first run on October 24, 2026, the system found 191 job postings on Airbnb's job board. Out of these, only 3 were considered relevant based on my rule.
 
-| | |
+One important issue I noticed was that my rule did not consider job location. For example, it marked some Software Engineer positions in Brazil as relevant even though the fictional candidate is a student in the United States on OPT.
+
+Claude also made the same mistake consistently. This showed me that getting consistent results does not necessarily mean the results are correct.
+
+I tried improving the prompt by adding a US-location requirement. This improved the relevance decisions, but it also created a formatting issue because the original output format did not include a way to cite job locations. I have not fixed this issue yet.
+
+For the overall design, I kept the job fetching and tracking logic in Python, while Claude was only responsible for evaluating the job information provided to it.
+
+## Requirements and Tools
+
+| Component | Details |
 |---|---|
-| Language | Python 3.10+ (tested on 3.12.7), **standard library only**, no `pip install` |
-| Claude judge | Claude Code CLI (`claude`, tested 2.1.305), signed in. Only needed for `--claude` and `experiments/` |
-| Board | Greenhouse `airbnb`; allow-list = `boards-api.greenhouse.io` only |
-| Persona | Aarav Patel (fictional, `@example.com`, `555` phone), `persona/aarav-patel.resume.json` |
-| Judge model | `claude-sonnet-5-5` (CLI alias `sonnet`). All 60 experiment calls and the 10 seeded-run calls recorded only this model. In the 10-28 run record, 7 of 17 calls name `claude-haiku-5-5`. The CLI can use a small model internally, and the code then saved only the first model listed, so those 7 records cannot show which model wrote the verdict. The code now saves every model listed (`models_used`) |
-| Terms of use | one GET per run to Greenhouse's public Job Board API, identified by a `User-Agent`; no login, no applying, no messages |
+| Programming Language | Python 3.10+ (tested using Python 3.12.7) |
+| Dependencies | Python standard library only; no additional packages required |
+| AI Tool | Claude Code CLI 2.1.305 |
+| Job Board | Airbnb through the Greenhouse Job Board API |
+| Allowed API Domain | `boards-api.greenhouse.io` |
+| Candidate | Aarav Patel (fictional résumé stored in `persona/aarav-patel.resume.json`) |
+| Model Used | `claude-sonnet-5-5` |
+| API Access | Public Greenhouse API using one GET request per run |
 
-## Commands (run from this folder, on a fresh clone)
+I used Claude Code to run the AI-based evaluations. It is only required when using the `--claude` option or running the experiments.
+
+For the experiments, all 60 model calls and the 10 seeded-run calls recorded `claude-sonnet-5-5`.
+
+During the October 28 live run, 7 out of 17 calls also recorded `claude-haiku-5-5`. Since the CLI can use internal models, the earlier implementation only saved the first model name returned. Because of this, I cannot confirm which model generated those 7 responses. I updated the code to save all reported model names using `models_used`.
+
+The system only reads publicly available job information. It does not log in, submit applications, or contact employers.
+
+## How to Run the Project
+
+All commands should be executed from the main project folder.
+
+### 1. Run the Tests
 
 ```bash
 python3 -m unittest discover -s tests -v
 ```
 
+This command runs the 27 contract tests and 2 additional hand-check tests.
+
+I also included a mutation check to see whether the tests can detect errors introduced into the code.
+
+```bash
+python3 tests/mutation_check.py
+```
+
+The mutation check introduces 13 different changes to the code and records which ones are detected by the tests. The results are saved in `tests/mutation-log.md`.
+
+### 2. Run the Job Watcher
+
 ```bash
 python3 src/watch.py --board airbnb --resume persona/aarav-patel.resume.json --state runs/state.json --out runs/ --label live --claude
 ```
 
-The first command runs the 27 contract tests offline, plus 2 hand-check tests that compare `hand-check/predictions.json` with the rule. `python3 tests/mutation_check.py` breaks the code 13 ways and records which bugs the tests notice (`tests/mutation-log.md`). The second is the watch. On a
-fresh state file it is a baseline and reports nothing. Run it again on another day and
-it reports only the postings that appeared in between.
+This command fetches the latest jobs from Airbnb and compares them with previously saved jobs.
 
-Re-run the seeded pair (no network; reproduces `runs/seeded/`):
+When the system runs for the first time with a new state file, it saves the current postings as a baseline and does not report any new jobs.
+
+When it runs again, it compares the job IDs with the saved state and reports only the newly added postings.
+
+### 3. Run the Seeded Tests
+
+I also created a seeded run so the job-tracking behavior can be tested without making additional API requests.
+
+First, run the baseline:
 
 ```bash
 python3 src/watch.py --board airbnb --resume persona/aarav-patel.resume.json --state /tmp/js1-seeded-state.json --out /tmp/js1-seeded --fixture runs/seeded/earlier-snapshot-SEEDED.json --label seeded-baseline
 ```
 
+Then run the second snapshot:
+
 ```bash
 python3 src/watch.py --board airbnb --resume persona/aarav-patel.resume.json --state /tmp/js1-seeded-state.json --out /tmp/js1-seeded --fixture runs/raw-20261024T192545-live.json --label seeded-run2
 ```
 
-Recompute every number in the reports from the saved results (no network, no Claude):
+The seeded baseline contains 181 postings. I used a modified version of the original response where the 10 most recently published jobs were removed.
+
+The second run uses the complete response containing 191 postings.
+
+This allows me to verify whether the system correctly identifies those 10 jobs as new.
+
+### 4. Recalculate Experiment Results
 
 ```bash
 python3 experiments/score.py
 ```
 
-Re-run the Claude experiments (about $1, makes 60 calls):
+This command recalculates the experiment results using the saved data. It does not require internet access or additional Claude calls.
+
+### 5. Run the Claude Experiments
 
 ```bash
 python3 experiments/run_claude.py --set sampling --prompt baseline --repeats 4 --out experiments/results/rerun-sampling.jsonl
 ```
 
-(`--set dev|held_out`, `--prompt baseline|revision` for the prompt experiment.)
+This command runs the sampling experiment using Claude.
 
-## What ran
+The full set of experiments makes 60 model calls and costs approximately $1.
 
-| Run | When | Source | Seen | New | Evidence |
-|---|---|---|---|---|---|
-| Live baseline | 2026-10-24 19:25 ET | `boards-api.greenhouse.io` | 191 | 0 (baseline) | `runs/raw-20261024T192545-live.json`, `runs/state.json`, `runs/report-…-live.md` |
-| **Seeded** baseline | 2026-10-24 19:26 | `runs/seeded/earlier-snapshot-SEEDED.json`: the live response with the 10 most recently published postings removed (**synthetic**, labeled in the file) | 181 | 0 (baseline) | `runs/seeded/*seeded-baseline*` |
-| **Seeded** run 2 | 2026-10-24 19:26 | the real live response | 191 | **10** (rule: 0 relevant; Claude: 0 relevant, 10/10 replies accepted) | `runs/seeded/*seeded-run2*`, `runs/seeded/state.json` |
-| **Live run 2** | 2026-10-28 15:35 ET (run by Smit) | `boards-api.greenhouse.io` | 194 | **17** (14 removed since 10-24; rule: 0 relevant; Claude: 0 relevant, 17/17 replies accepted) | `runs/raw-20261028T153510-live.json`, `runs/run-…-live.json`, `runs/report-20261028T153510-live.md`, `runs/state.json` |
+For the prompt experiments, I can use `--set dev` or `--set held_out` and select either `--prompt baseline` or `--prompt revision`.
 
-Other evidence: `SAMPLING-REPORT.md`, `PROMPT-EXPERIMENT.md`, `ACTION-SURFACES.md`,
-`experiments/` (prompts, labels, raw replies, scores), `DECISIONS.md`, `SOURCES.md`,
-`FRICTIONAL.md`.
+## Job Watcher Results
 
-## How to explain any verdict
+I ran the job watcher using both live API responses and seeded data to check whether it correctly detects newly added postings.
 
-Open the run's report, for example `runs/report-20261028T153510-live.md`. Each posting
-lists the rule's citations as «résumé field» ↔ «posting text» and the first check that
-failed. To redo one by hand: (1) does the title contain «Software Engineer»? (2) does
-the title contain senior / sr / staff / principal / manager? (3) count the distinct
-skills from the résumé's `skills` lists (not `familiar_with_not_shipped`) that appear as
-whole words in the posting. Relevant only if (1) yes, (2) no, and (3) ≥ 2.
+| Run | Date | Total Jobs | New Jobs | Results |
+|---|---|---:|---:|---|
+| Live Baseline | October 24, 2026 | 191 | 0 | Saved the initial state |
+| Seeded Baseline | October 24, 2026 | 181 | 0 | Saved the synthetic baseline |
+| Seeded Run 2 | October 24, 2026 | 191 | 10 | Rule: 0 relevant; Claude: 0 relevant |
+| Live Run 2 | October 28, 2026 | 194 | 17 | Rule: 0 relevant; Claude: 0 relevant |
 
-## Submission
+### Live Baseline — October 24
 
-- GitHub folder: `https://github.com/nikbearbrown/info-7375-prompt-engineering-for-generative-ai/tree/main/fall-2026/smit-p/js1-contract-and-watch`
-  (submitted through a pull request from my fork; the link works once it is merged)
-- Final commit: given in Canvas. A commit cannot contain its own hash.
+During the first live run, the system fetched 191 jobs from Airbnb.
 
-## Layout
+Since this was the first run, all jobs were saved as the baseline. No jobs were reported as new.
 
+The raw API response was saved in:
+
+`runs/raw-20261024T192545-live.json`
+
+### Seeded Run — October 24
+
+For this test, I used a modified snapshot containing 181 jobs as the baseline.
+
+The second snapshot contained all 191 jobs.
+
+The system correctly detected 10 new jobs.
+
+Both the rule-based evaluator and Claude marked all 10 jobs as not relevant. Claude returned 10 valid responses.
+
+### Live Run — October 28
+
+I ran the job watcher again on October 28, 2026.
+
+This time, Airbnb's job board contained 194 postings.
+
+The system identified 17 new job IDs compared with the October 24 baseline. It also found that 14 previously recorded jobs were no longer on the board.
+
+Both the rule-based approach and Claude classified all 17 new jobs as not relevant.
+
+Claude returned 17 valid responses.
+
+The results were saved in:
+
+- `runs/raw-20261028T153510-live.json`
+- `runs/run-…-live.json`
+- `runs/report-20261028T153510-live.md`
+- `runs/state.json`
+
+Additional experiment results and explanations are available in `SAMPLING-REPORT.md`, `PROMPT-EXPERIMENT.md`, `ACTION-SURFACES.md`, `DECISIONS.md`, `SOURCES.md`, and `FRICTIONAL.md`.
+
+## How the Relevance Rule Works
+
+I created a simple rule to decide whether a job is relevant to the fictional candidate.
+
+The rule checks three things:
+
+1. The job title must contain "Software Engineer".
+2. The title must not contain senior-level terms such as "Senior", "Sr", "Staff", "Principal", or "Manager".
+3. The job description must contain at least two distinct skills listed in the candidate's résumé.
+
+For skill matching, the system uses the résumé's `skills` lists and does not count skills under `familiar_with_not_shipped`.
+
+It also uses whole-word matching to avoid incorrect matches.
+
+For example, Java should not match JavaScript, SQL should not match PostgreSQL, and Go should not match Google.
+
+A job is marked relevant only when all three conditions are satisfied.
+
+For each job, the report includes the matched résumé fields, the corresponding job description text, and the first condition that failed.
+
+This makes it possible to review the decision manually instead of relying only on Claude's response.
+
+## Project Submission
+
+**GitHub Repository:**
+
+`https://github.com/nikbearbrown/info-7375-prompt-engineering-for-generative-ai/tree/main/fall-2026/smit-p/js1-contract-and-watch`
+
+I submitted the assignment through a pull request from my fork. The folder link will work once the pull request is merged.
+
+The final commit hash is provided separately in Canvas because a commit cannot include its own hash.
+
+## Project Structure
+
+```text
+CONTRACT.md
+    Project requirements and relevance rules.
+    Written before implementation.
+
+src/
+    rule.py
+    claude_judge.py
+    watch.py
+
+tests/
+    test_contract.py
+    test_hand_check.py
+    mutation_check.py
+    mutation-log.md
+
+prompts/
+    baseline.md
+    revision.md
+
+experiments/
+    run_claude.py
+    score.py
+    results/
+    labeling files and experiment data
+
+hand-check/
+    predictions.json
+
+runs/
+    Raw API responses
+    Saved state
+    Run records
+    Generated reports
 ```
-CONTRACT.md                 written first (commit c29d163), before any code
-src/rule.py                 the written rule + justification validator (a record)
-src/claude_judge.py         Claude under a prompt contract + strict reply validator (a judgment)
-src/watch.py                allow-listed fetch, raw saved, diff by id, reports
-tests/test_contract.py      27 tests incl. both wrong versions; fixtures day1/day2 (CONSTRUCTED postings)
-tests/mutation_check.py     deliberate-bug check → tests/mutation-log.md
-tests/test_hand_check.py    predictions read from 3 postings (hand-check/, written by Claude) vs the rule
-prompts/                    baseline.md, revision.md (one change)
-experiments/                selection, labeling rule, hand labels, run_claude.py, score.py, results/
-runs/                       raw responses, state files, run records, reports
-```
 
-## Sign-off — Job-Search Agent 1
+The `CONTRACT.md` file was committed first (`c29d163`), before the implementation.
 
-**Checked**
+The `src/` folder contains the relevance rule, Claude evaluation, and job-monitoring logic.
 
-| Property | Test (`tests/test_contract.py`) or check |
+The `tests/` folder contains the contract tests, hand-check tests, and mutation testing.
+
+The `prompts/` folder contains the original and revised prompts.
+
+The `experiments/` folder contains the experiment scripts, labels, model responses, and calculated results.
+
+The `runs/` folder contains the saved API responses, state files, and job reports.
+
+## Final Sign-Off — Job-Search Agent 1
+
+### What I Checked
+
+I reviewed the project results and ran the tests to verify the main functionality.
+
+| What Was Checked | Test or Evidence |
 |---|---|
-| Rule verdicts match hand-worked answers on 7 fixture postings | `TheRule.test_hand_worked_verdicts` |
-| Whole-word matching (Java≠JavaScript, SQL≠PostgreSQL, Go≠Google) | `TheRule.test_whole_word_matching` |
-| Wrong version 1 (labels on wrong postings) is caught: every shifted label, a same-title twin, and end to end through `watch.py` with the board order reversed | `WrongVersion1_*` (4 tests) |
-| Wrong version 2 (justification cites nothing / invents a citation / cites part of a word) is caught | `WrongVersion2_*` (4 tests) |
-| Baseline reports nothing; run 2 reports exactly the added ids; no-change run reports nothing | `TheWatch.*` |
-| Failed fetch leaves state untouched; raw saved byte-for-byte | `TheWatch.test_failed_fetch_leaves_state_alone`, `test_raw_response_saved_untouched` |
-| Off-list hosts, http, bad slugs, and non-persona résumés refused | `Refuses.*` |
-| Claude replies outside the fixed format rejected (11 cases); a failed CLI call is recorded, not crashed | `ClaudeReplyValidator.*` |
-| The tests notice deliberate bugs | `tests/mutation_check.py` → `tests/mutation-log.md`: 12 of 13 caught. The survivor (M1) removes a guard that a second check already covers |
-| Report numbers match the raw results | recomputation, `experiments/score.py` |
-| The rule's verdict and skill set on 3 real postings match a reading of the posting text made before the test was run | `tests/test_hand_check.py` against `hand-check/predictions.json`: 2 tests, OK (2026-10-30). **The predictions were written by Claude at my request, not by me**, so this is not an independent check: the same model wrote the code and the reading |
+| Rule-based decisions for 7 test postings | `TheRule.test_hand_worked_verdicts` |
+| Whole-word skill matching | `TheRule.test_whole_word_matching` |
+| Detection of labels assigned to incorrect postings | `WrongVersion1_*` |
+| Detection of missing or incorrect citations | `WrongVersion2_*` |
+| Baseline and new-job detection | `TheWatch.*` |
+| Failed API requests do not modify saved state | `TheWatch.test_failed_fetch_leaves_state_alone` |
+| Raw API response is saved without changes | `test_raw_response_saved_untouched` |
+| Invalid hosts, URLs, board names, and résumés are rejected | `Refuses.*` |
+| Invalid Claude responses are rejected | `ClaudeReplyValidator.*` |
+| Tests detect intentionally introduced bugs | `tests/mutation_check.py` |
+| Report calculations match saved experiment results | `experiments/score.py` |
+| Rule results match predictions for 3 real postings | `tests/test_hand_check.py` |
 
-**How:** by hand (me): the 20 hand labels (three confirmed explicitly on 10-28) and the live day-2 run. I ran the full suite myself on 2026-10-28 (`python3 -m unittest discover -s tests -v`): 29 tests, `OK (skipped=2)`. The 2 skipped were the hand-check tests, which waited for predictions. On 2026-10-30, with the predictions filled in by Claude, the suite ran 29 tests, `OK`. Every test was written by Claude against
-CONTRACT.md, right **after** Claude wrote the code, in the same session. So none of them
-is an independent test I wrote before reading Claude's code. The numbers in
-the reports were checked by recomputation (`score.py`). Two claims in Claude's report
-drafts were wrong when re-checked against the data, and were corrected.
+### Testing Results
 
-**Not checked**
+I ran the complete test suite myself on October 28, 2026.
 
-1. Whether "new by id" matches "new job" for a person. On 10-28, 7826337 «Machine
-   Learning Engineer, Assistance Engineering» was new by id, but a posting with the same
-   title (7716341) was already on the board. I did not check whether it is a different
-   role or a duplicate.
-2. Whether the hand-worked expected verdicts in the tests are themselves right. Claude
-   derived them, and I have not re-derived them by hand. This includes the 3 hand-check
-   predictions: Claude wrote them on 2026-10-30 at my request.
-3. The rule on boards other than Airbnb, on non-Greenhouse boards, or on postings whose
-   HTML differs from Airbnb's.
-4. Claude's verdict stability at other temperatures, on other models, or on other days.
-5. Whether any of the 3 rule-relevant jobs is actually worth applying to (location,
-   sponsorship, and years are not in the rule).
-6. Behavior when the board is paginated or returns more than one page.
+At that time, the results were:
 
-**Not claiming:** that the agent finds good jobs. It applies my written rule, which has a
-known location gap. Not claiming that 9/10 means anything with one positive label. Not
-claiming that Claude's verdicts are facts. Not claiming that the revision prompt is
-better.
+```text
+Ran 29 tests
+OK (skipped=2)
+```
 
-**Signed:** Smit P., 2026-10-30. Drafted by Claude; I read it and confirmed it is true for me. I did not write the tests or the hand-check predictions, as stated above.
+The two skipped tests were the hand-check tests because the predictions had not been added yet.
 
-## Driver's seat
+On October 30, I asked Claude to prepare the predictions for three real job postings.
 
-| Part of the task | Claude should | I should | Why it stays mine | Evidence the split happened |
-|---|---|---|---|---|
-| The contract | offer options, write them up, implement against them | choose board, persona, rule, wrong versions, failure | it defines what "right" means; whoever writes it decides what gets checked | DECISIONS D1–D6; `CONTRACT.md` alone in commit `c29d163` |
-| Hand labels | present the facts of each posting; never fill in a label | label every posting | the labels are the answer key; if Claude labels, the experiment grades Claude against itself | DECISIONS D8–D12; `56ca4e8`. Where Claude did infer three labels, that was caught in review and I re-labeled them (D12) |
-| The labeling rule | point out when my labels contradict my rule | decide whether the rule or the labels change | only I know which one I meant | D9–D10: my typed answer contradicted v1, and I chose to amend (LABELING-RULE.md) |
-| Code, tests, runs | write and run all of it; break its own code to test the tests | run the tests myself, run the live day-2 watch, check the numbers | I am the one who has to explain any verdict to a TA; code I have never run is not verified by me | SOURCES.md; DECISIONS D14 (I ran day 2); `tests/mutation-log.md` |
-| Is a job worth a day? | flag, cite, sort | decide | that is my time and my visa clock | every report ends at "you decide" |
-| Signing | draft | sign or withhold | my name goes on it | the signature line above (2026-10-30) |
+After adding those predictions, the full test suite completed successfully:
+
+```text
+Ran 29 tests
+OK
+```
+
+
+I also ran the mutation test, which intentionally introduced 13 bugs.
+
+The tests detected 12 of those 13 changes.
+
+The remaining mutation (M1) removed a guard that was already covered by another check, so it did not cause a test failure.
+
+Claude generated the test cases after implementing the code, based on `CONTRACT.md`. I did not independently calculate all the expected test results.
+
+For the experiment reports, I used `experiments/score.py` to recalculate the results from the saved data.
+
+During this process, two incorrect claims in the initial report drafts were identified and corrected.
+
+I also personally provided the 20 hand labels used in the experiments. Three labels were initially inferred by Claude from my rule, but I explicitly confirmed them on October 28.
+
+### What I Have Not Checked
+
+There are still some parts of the project that I have not fully verified.
+
+1. **Duplicate job postings:** The system identifies new jobs using job IDs. On October 28, job ID `7826337`, "Machine Learning Engineer, Assistance Engineering", was marked as new even though another posting with the same title already existed under ID `7716341`. I have not checked whether these represent different positions or duplicate postings.
+
+2. **Expected test results:** Claude calculated the expected results for the contract tests and the three hand-check predictions. I checked the three hand-check predictions by hand; I have not re-derived the contract tests' expected results.
+
+3. **Other job boards:** I tested the system using Airbnb's Greenhouse board. I have not tested it on other companies, non-Greenhouse platforms, or different HTML structures.
+
+4. **Model consistency:** I have not tested Claude's decisions using different temperatures, different models, or across multiple days.
+
+5. **Actual job suitability:** The rule identified 3 relevant jobs, but I have not verified whether those positions are actually suitable for the candidate based on location, sponsorship, or required experience.
+
+6. **Pagination:** I have not tested how the system behaves when a job board returns multiple pages of results.
+
+### Limitations
+
+The current system is designed to apply a predefined relevance rule. It does not guarantee that the jobs it identifies are good opportunities for the candidate.
+
+One limitation is that the rule does not consider job location, which caused some jobs outside the United States to be marked as relevant.
+
+The experiment results also have limitations. For example, a score of 9 out of 10 is not enough to establish strong performance when the test set contains only one positive example.
+
+I also do not treat Claude's decisions as automatically correct. The model can give consistent answers while still making mistakes.
+
+Although the revised prompt improved the location-based decisions, it introduced an output-format problem. Because of this, I cannot conclude that the revised prompt is better overall.
+
+## My Role and Claude's Role
+
+I used Claude Code to help with implementation, testing, and documentation, but I made the main decisions about what the system should do.
+
+| Part | Claude's Contribution | My Contribution |
+|---|---|---|
+| Contract | Suggested options, prepared documentation, and implemented the requirements | Selected the job board, persona, relevance rule, incorrect versions, and failure condition |
+| Hand Labels | Presented job information and initially inferred three labels | Provided and confirmed all 20 labels |
+| Labeling Rule | Identified inconsistencies between the rule and labels | Decided how to update the rule |
+| Code and Testing | Generated the code, tests, and experiment scripts | Ran the tests, reviewed results, and performed the live day-2 run |
+| Job Decisions | Evaluated jobs and provided supporting evidence | Decided how to interpret the results and whether a job was worth considering |
+| Final Review | Helped prepare the documentation and sign-off | Reviewed the final work and signed it |
+
+I kept the contract decisions and labeling process under my control because these define how the system is evaluated.
+
+Claude helped with implementation and experimentation, but I was responsible for understanding the results and checking whether the project followed my requirements.
+
+The decisions are documented in `DECISIONS.md`, and the complete breakdown of contributions is available in `SOURCES.md`.
+
+## Final Confirmation
+
+I reviewed the assignment requirements, test results, experiment outputs, and project documentation.
+
+I understand that the system has limitations, especially with job location, duplicate postings, and the independence of the tests.
+
+I used Claude Code for implementation, testing, and drafting documentation. The main project decisions, labeling rules, and hand labels were provided by me.
+
+I ran the tests and the live job watcher, reviewed the results, and confirmed the final submission.
+
+**Signed:** Smit Patel  
+**Date:** October 30, 2026
